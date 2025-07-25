@@ -21,13 +21,13 @@ export interface Theme {
 }
 
 const lightTheme: Theme = {
-  bashBorder: '#ff0087',
-  claude: '#5f97cd',
-  permission: '#5769f7',
+  bashBorder: '#20B2AA',
+  claude: '#9ACD32',
+  permission: '#FF8C00',
   secondaryBorder: '#999',
   text: '#000',
   secondaryText: '#666',
-  suggestion: '#5769f7',
+  suggestion: '#8A2BE2',
   success: '#2c7a39',
   error: '#ab2b3f',
   warning: '#966c1e',
@@ -40,13 +40,13 @@ const lightTheme: Theme = {
 }
 
 const lightDaltonizedTheme: Theme = {
-  bashBorder: '#0066cc', // Blue instead of pink for better contrast
-  claude: '#5f97cd', // Orange adjusted for deuteranopia
-  permission: '#3366ff', // Brighter blue for better visibility
+  bashBorder: '#20B2AA', // Light sea green for better contrast
+  claude: '#9ACD32', // Yellowish green for better visibility
+  permission: '#FF8C00', // Orange for better visibility and contrast
   secondaryBorder: '#999',
   text: '#000',
   secondaryText: '#666',
-  suggestion: '#3366ff',
+  suggestion: '#8A2BE2', // Purple for better contrast with green
   success: '#006699', // Blue instead of green
   error: '#cc0000', // Pure red for better distinction
   warning: '#ff9900', // Orange adjusted for deuteranopia
@@ -59,13 +59,13 @@ const lightDaltonizedTheme: Theme = {
 }
 
 const darkTheme: Theme = {
-  bashBorder: '#fd5db1',
-  claude: '#5f97cd',
-  permission: '#b1b9f9',
+  bashBorder: '#48D1CC',
+  claude: '#9ACD32',
+  permission: '#FFA500',
   secondaryBorder: '#888',
   text: '#fff',
   secondaryText: '#999',
-  suggestion: '#b1b9f9',
+  suggestion: '#DA70D6',
   success: '#4eba65',
   error: '#ff6b80',
   warning: '#ffc107',
@@ -78,13 +78,13 @@ const darkTheme: Theme = {
 }
 
 const darkDaltonizedTheme: Theme = {
-  bashBorder: '#3399ff', // Bright blue instead of pink
-  claude: '#5f97cd', // Orange adjusted for deuteranopia
-  permission: '#99ccff', // Light blue for better contrast
+  bashBorder: '#48D1CC', // Medium turquoise for better visibility
+  claude: '#9ACD32', // Yellowish green for better visibility
+  permission: '#FFA500', // Orange for better visibility in dark theme
   secondaryBorder: '#888',
   text: '#fff',
   secondaryText: '#999',
-  suggestion: '#99ccff',
+  suggestion: '#DA70D6', // Orchid purple for better contrast
   success: '#3399ff', // Bright blue instead of green
   error: '#ff6666', // Bright red for better visibility
   warning: '#ffcc00', // Yellow-orange for deuteranopia
