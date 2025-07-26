@@ -4,74 +4,67 @@ import { useEffect, useRef, useState } from 'react'
 import { getTheme } from '../utils/theme'
 import { sample } from 'lodash-es'
 import { getSessionState } from '../utils/sessionState'
-// NB: The third character in this string is an emoji that
-// renders on Windows consoles with a green background
+// Modern tech-focused spinner characters
 const CHARACTERS =
   process.platform === 'darwin'
-    ? ['·', '✢', '✳', '∗', '✻', '✽']
-    : ['·', '✢', '*', '∗', '✻', '✽']
+    ? ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+    : ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 
 const MESSAGES = [
-  'Accomplishing',
-  'Actioning',
-  'Actualizing',
-  'Baking',
-  'Brewing',
-  'Calculating',
-  'Cerebrating',
-  'Churning',
-  'Cynering',
-  'Coalescing',
-  'Cogitating',
-  'Computing',
-  'Conjuring',
-  'Considering',
-  'Cooking',
-  'Crafting',
-  'Creating',
-  'Crunching',
-  'Deliberating',
-  'Determining',
-  'Doing',
-  'Effecting',
-  'Finagling',
-  'Forging',
-  'Forming',
-  'Generating',
-  'Hatching',
-  'Herding',
-  'Honking',
-  'Hustling',
-  'Ideating',
-  'Inferring',
-  'Manifesting',
-  'Marinating',
-  'Moseying',
-  'Mulling',
-  'Mustering',
-  'Musing',
-  'Noodling',
-  'Percolating',
-  'Pondering',
+  'Analyzing',
   'Processing',
-  'Puttering',
-  'Reticulating',
-  'Ruminating',
-  'Schlepping',
-  'Shucking',
-  'Simmering',
-  'Smooshing',
-  'Spinning',
-  'Stewing',
-  'Synthesizing',
+  'Computing',
   'Thinking',
-  'Transmuting',
-  'Vibing',
-  'Working',
+  'Cynering',
+  'Optimizing',
+  'Synthesizing',
+  'Calculating',
+  'Generating',
+  'Interpreting',
+  'Evaluating',
+  'Orchestrating',
+  'Architecting',
+  'Constructing',
+  'Assembling',
+  'Debugging',
+  'Refactoring',
+  'Compiling',
+  'Deploying',
+  'Transforming',
+  'Innovating',
+  'Engineering',
+  'Developing',
+  'Building',
+  'Creating',
+  'Designing',
+  'Implementing',
+  'Executing',
+  'Rendering',
+  'Parsing',
+  'Indexing',
+  'Searching',
+  'Scanning',
+  'Mining',
+  'Learning',
+  'Adapting',
+  'Evolving',
+  'Upgrading',
+  'Enhancing',
+  'Accelerating',
+  'Streamlining',
+  'Automating',
+  'Integrating',
+  'Synchronizing',
+  'Validating',
+  'Verifying',
+  'Testing',
+  'Benchmarking',
+  'Profiling',
+  'Monitoring',
 ]
 
 export function Spinner(): React.ReactNode {
-  const frames = [...CHARACTERS, ...[...CHARACTERS].reverse()]
+  const frames = CHARACTERS
   const [frame, setFrame] = useState(0)
   const [elapsedTime, setElapsedTime] = useState(0)
   const message = useRef(sample(MESSAGES))
@@ -80,7 +73,7 @@ export function Spinner(): React.ReactNode {
   useEffect(() => {
     const timer = setInterval(() => {
       setFrame(f => (f + 1) % frames.length)
-    }, 120)
+    }, 80)
 
     return () => clearInterval(timer)
   }, [frames.length])
@@ -96,11 +89,11 @@ export function Spinner(): React.ReactNode {
   return (
     <Box flexDirection="row" marginTop={1}>
       <Box flexWrap="nowrap" height={1} width={2}>
-        <Text color={getTheme().cynerza}>{frames[frame]}</Text>
+        <Text color={getTheme().cynerza} bold>{frames[frame]}</Text>
       </Box>
-      <Text color={getTheme().cynerza}>{message.current}… </Text>
+      <Text color={getTheme().cynerza} bold>{message.current}… </Text>
       <Text color={getTheme().secondaryText}>
-        ({elapsedTime}s · <Text bold>esc</Text> to interrupt)
+        ({elapsedTime}s · <Text bold color={getTheme().cynerza}>esc</Text> to interrupt)
       </Text>
       <Text color={getTheme().secondaryText}>
         · {getSessionState('currentError')}
@@ -110,20 +103,20 @@ export function Spinner(): React.ReactNode {
 }
 
 export function SimpleSpinner(): React.ReactNode {
-  const frames = [...CHARACTERS, ...[...CHARACTERS].reverse()]
+  const frames = CHARACTERS
   const [frame, setFrame] = useState(0)
 
   useEffect(() => {
     const timer = setInterval(() => {
       setFrame(f => (f + 1) % frames.length)
-    }, 120)
+    }, 80)
 
     return () => clearInterval(timer)
   }, [frames.length])
 
   return (
     <Box flexWrap="nowrap" height={1} width={2}>
-      <Text color={getTheme().cynerza}>{frames[frame]}</Text>
+      <Text color={getTheme().cynerza} bold>{frames[frame]}</Text>
     </Box>
   )
 }

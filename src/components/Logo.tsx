@@ -41,15 +41,18 @@ export function Logo({
     <Box flexDirection="column">
       <Box
         borderColor={theme.cynerza}
-        borderStyle="round"
+        borderStyle="double"
         flexDirection="column"
         gap={1}
-        paddingLeft={1}
+        paddingLeft={2}
+        paddingRight={1}
+        paddingTop={1}
+        paddingBottom={1}
         width={width}
       >
         <Text>
-          <Text color={theme.cynerza}>✻</Text> Welcome to{' '}
-          <Text bold>{PRODUCT_NAME}</Text> <Text>research preview!</Text>
+          <Text color={theme.cynerza} bold>⚡</Text> Welcome to{' '}
+          <Text bold color={theme.cynerza}>{PRODUCT_NAME}</Text> <Text color={theme.cynerza}>research preview!</Text>
         </Text>
         <AsciiLogo />
 
