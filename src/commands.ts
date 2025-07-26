@@ -20,10 +20,14 @@ import terminalSetup from './commands/terminalSetup'
 import { Tool, ToolUseContext } from './Tool'
 import resume from './commands/resume'
 import { getMCPCommands } from './services/mcpClient'
-import type { MessageParam } from '@anthropic-ai/sdk/resources/index.mjs'
 import { memoize } from 'lodash-es'
 import type { Message } from './query'
-import { isAnthropicAuthEnabled } from './utils/auth'
+import { isOpenAIAuthEnabled } from './utils/auth'
+
+type MessageParam = {
+  role: 'user' | 'assistant'
+  content: string | Array<{ type: 'text'; text: string } | { type: 'image'; source: any }>
+}
 
 type PromptCommand = {
   type: 'prompt'
@@ -91,7 +95,7 @@ const COMMANDS = memoize((): Command[] => [
   bug,
   review,
   terminalSetup,
-  ...(isAnthropicAuthEnabled() ? [logout, login()] : []),
+  ...(isOpenAIAuthEnabled() ? [logout, login()] : []),
   ...INTERNAL_ONLY_COMMANDS,
 ])
 

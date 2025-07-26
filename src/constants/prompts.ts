@@ -117,6 +117,8 @@ NEVER commit changes unless the user explicitly asks you to. It is VERY IMPORTAN
 # Tool usage policy
 - When doing file search, prefer to use the Agent tool in order to reduce context usage.
 - If you intend to call multiple tools and there are no dependencies between the calls, make all of the independent calls in the same function_calls block.
+- IMPORTANT: Never call the same tool with identical parameters multiple times. Each tool should be called exactly once per task.
+- IMPORTANT: When creating or editing a file, call the tool only once. Do not repeat tool calls for the same operation.
 
 You MUST answer concisely with fewer than 4 lines of text (not including tool use or code generation), unless user asks for detail.
 `,

@@ -1,7 +1,7 @@
 import { Command } from '../commands'
 import { getContext } from '../context'
 import { getMessagesGetter, getMessagesSetter } from '../messages'
-import { API_ERROR_MESSAGE_PREFIX, querySonnet } from '../services/cynerza'
+import { API_ERROR_MESSAGE_PREFIX, queryOpenAI } from '../services/cynerza'
 import {
   createUserMessage,
   normalizeMessagesForAPI,
@@ -31,7 +31,7 @@ const compact = {
       "Provide a detailed but concise summary of our conversation above. Focus on information that would be helpful for continuing the conversation, including what we did, what we're doing, which files we're working on, and what we're going to do next.",
     )
 
-    const summaryResponse = await querySonnet(
+    const summaryResponse = await queryOpenAI(
       normalizeMessagesForAPI([...messages, summaryRequest]),
       ['You are a helpful AI assistant tasked with summarizing conversations.'],
       0,
@@ -59,17 +59,6 @@ const compact = {
       )
     } else if (summary.startsWith(API_ERROR_MESSAGE_PREFIX)) {
       throw new Error(summary)
-    }
-
-    // Substitute low token usage info so that the context-size UI warning goes
-    // away. The actual numbers don't matter too much: `countTokens` checks the
-    // most recent assistant message for usage numbers, so this estimate will
-    // be overridden quickly.
-    summaryResponse.message.usage = {
-      input_tokens: 0,
-      output_tokens: summaryResponse.message.usage.output_tokens,
-      cache_creation_input_tokens: 0,
-      cache_read_input_tokens: 0,
     }
 
     // Clear screen and messages

@@ -7,7 +7,16 @@ import { env } from '../utils/env'
 import { getCwd } from '../utils/state'
 import * as path from 'path'
 import { mapValues } from 'lodash-es'
-import type { ContentBlock } from '@anthropic-ai/sdk/resources/index.mjs'
+// VCR service for recording and replaying interactions
+
+type ContentBlock = {
+  type: 'text' | 'tool_use' | 'tool_result'
+  text?: string
+  name?: string
+  input?: any
+  tool_use_id?: string
+  content?: string | Array<{ type: 'text'; text: string }>
+}
 
 export async function withVCR(
   messages: (UserMessage | AssistantMessage)[],
@@ -31,7 +40,7 @@ export async function withVCR(
 
   if (env.isCI) {
     console.warn(
-      `Anthropic API fixture missing. Re-run npm test locally, then commit the result. ${JSON.stringify({ input: dehydratedInput }, null, 2)}`,
+      `OpenAI API fixture missing. Re-run npm test locally, then commit the result. ${JSON.stringify({ input: dehydratedInput }, null, 2)}`,
     )
   }
 

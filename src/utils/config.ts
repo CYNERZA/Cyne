@@ -259,9 +259,7 @@ export function getGlobalConfig(): GlobalConfig {
 // TODO: Decide what to do with this code
 // export function getAnthropicApiKey(): null | string {
 //   const config = getGlobalConfig()
-//   return process.env.ANTHROPIC_API_KEY;
 //   if (process.env.USER_TYPE === 'SWE_BENCH') {
-//     return process.env.ANTHROPIC_API_KEY_OVERRIDE ?? null
 //   }
 
 //   if (process.env.USER_TYPE === 'external') {
@@ -270,12 +268,9 @@ export function getGlobalConfig(): GlobalConfig {
 
 //   if (process.env.USER_TYPE === 'ant') {
 //     if (
-//       process.env.ANTHROPIC_API_KEY &&
 //       config.customApiKeyResponses?.approved?.includes(
-//         normalizeApiKeyForConfig(process.env.ANTHROPIC_API_KEY),
 //       )
 //     ) {
-//       return process.env.ANTHROPIC_API_KEY
 //     }
 //     return config.primaryApiKey ?? null
 //   }

@@ -24,7 +24,7 @@ import {
 import { CanUseToolFn } from './hooks/useCanUseTool'
 import {
   formatSystemPromptWithContext,
-  querySonnet,
+  queryOpenAI,
 } from './services/cynerza.js'
 import { logEvent } from './services/statsig'
 import { all } from './utils/generators'
@@ -146,7 +146,7 @@ export async function* query(
 ): AsyncGenerator<Message, void> {
   const fullSystemPrompt = formatSystemPromptWithContext(systemPrompt, context)
   function getAssistantResponse() {
-    return querySonnet(
+    return queryOpenAI(
       normalizeMessagesForAPI(messages),
       fullSystemPrompt,
       toolUseContext.options.maxThinkingTokens,

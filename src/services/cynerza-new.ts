@@ -239,7 +239,7 @@ export async function* query(
 
 // Simplified versions of the main query functions
 export const queryHaiku = query
-export const querySonnet = query
+export const queryOpenAI = query
 export const queryOpus = query
 
 // Export for backward compatibility

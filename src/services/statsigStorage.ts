@@ -5,7 +5,7 @@ import { homedir } from 'os'
 import { logError } from '../utils/log'
 import { existsSync, unlinkSync } from 'fs'
 
-const STATSIG_DIR = path.join(homedir(), '.claude', 'statsig')
+const STATSIG_DIR = path.join(homedir(), '.cynerza', 'statsig')
 
 // Ensure the directory exists
 try {

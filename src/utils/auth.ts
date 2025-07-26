@@ -12,6 +12,7 @@ export function isLoggedInToOpenAI(): boolean {
   // return !!config.primaryApiKey
 }
 
+// Legacy functions - kept for compatibility
 export function isAnthropicAuthEnabled(): boolean {
   return false
 }

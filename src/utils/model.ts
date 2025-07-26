@@ -3,8 +3,8 @@ import { getDynamicConfig, getExperimentValue } from '../services/statsig'
 import { logError } from './log'
 import { getGlobalConfig } from './config'
 
-export const USE_BEDROCK = !!process.env.CLAUDE_CODE_USE_BEDROCK
-export const USE_VERTEX = !!process.env.CLAUDE_CODE_USE_VERTEX
+export const USE_BEDROCK = !!process.env.CYNERZA_USE_BEDROCK
+export const USE_VERTEX = !!process.env.CYNERZA_USE_VERTEX
 
 export interface ModelConfig {
   bedrock: string
@@ -13,17 +13,17 @@ export interface ModelConfig {
 }
 
 const DEFAULT_MODEL_CONFIG: ModelConfig = {
-  bedrock: 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
-  vertex: 'claude-3-7-sonnet@20250219',
-  // firstParty: 'claude-3-7-sonnet-20250219',
+  bedrock: 'gpt-4',
+  vertex: 'gpt-4',
+  // firstParty: 'gpt-4',
   firstParty: 'deepseek-chat',
 }
 
 // export const SMALL_FAST_MODEL = USE_BEDROCK
-//   ? 'us.anthropic.claude-3-5-haiku-20241022-v1:0'
+//   ? 'gpt-3.5-turbo'
 //   : USE_VERTEX
-//     ? 'claude-3-5-haiku@20241022'
-//     : 'claude-3-5-haiku-20241022'
+//     ? 'gpt-3.5-turbo'
+//     : 'gpt-3.5-turbo'
 
 export const SMALL_FAST_MODEL = 'deepseek-chat'
 /**
@@ -49,8 +49,8 @@ export const getSlowAndCapableModel = memoize(async (): Promise<string> => {
 
 export async function isDefaultSlowAndCapableModel(): Promise<boolean> {
   return (
-    !process.env.ANTHROPIC_MODEL ||
-    process.env.ANTHROPIC_MODEL === (await getSlowAndCapableModel())
+    !process.env.OPENAI_MODEL ||
+    process.env.OPENAI_MODEL === (await getSlowAndCapableModel())
   )
 }
 
@@ -59,14 +59,13 @@ export async function isDefaultSlowAndCapableModel(): Promise<boolean> {
  * Checks for hardcoded model-specific environment variables first,
  * then falls back to CLOUD_ML_REGION env var or default region
  */
-export function getVertexRegionForModel(
-  model: string | undefined,
-): string | undefined {
-  if (model?.startsWith('claude-3-5-haiku')) {
-    return process.env.VERTEX_REGION_CLAUDE_3_5_HAIKU
-  } else if (model?.startsWith('claude-3-5-sonnet')) {
-    return process.env.VERTEX_REGION_CLAUDE_3_5_SONNET
-  } else if (model?.startsWith('claude-3-7-sonnet')) {
-    return process.env.VERTEX_REGION_CLAUDE_3_7_SONNET
+export function getVertexRegion(model?: string): string | undefined {
+  if (model?.startsWith('gpt-3.5')) {
+    return process.env.VERTEX_REGION_GPT_3_5
+  } else if (model?.startsWith('gpt-4')) {
+    return process.env.VERTEX_REGION_GPT_4
+  } else if (model?.startsWith('gpt-4o')) {
+    return process.env.VERTEX_REGION_GPT_4O
   }
+  return undefined
 }

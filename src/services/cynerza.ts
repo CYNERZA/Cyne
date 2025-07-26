@@ -84,7 +84,9 @@ export function resetOpenAIClient(): void {
 }
 
 // For backward compatibility with existing code
-export const resetAnthropicClient = resetOpenAIClient
+
+// Simplified client management
+export const resetOpenAIClientAlias = resetOpenAIClient
 
 /**
  * Verify API key by making a simple request
@@ -121,9 +123,9 @@ function convertOpenAIToInternalFormat(message: OpenAI.Chat.Completions.ChatComp
 }
 
 /**
- * Main query function using OpenAI for Sonnet-style calls
+ * Main query function using OpenAI
  */
-export async function querySonnet(
+export async function queryOpenAI(
   messages: (UserMessage | AssistantMessage)[],
   systemPrompt: string[],
   maxThinkingTokens: number,
@@ -216,6 +218,9 @@ export async function querySonnet(
       // Extract tool calls and convert to tool_use format
       const toolCalls = choice.message?.tool_calls || []
       
+      // Deduplicate tool calls based on function name and arguments
+      const seenToolCalls = new Set<string>()
+      
       for (const toolCall of toolCalls) {
         let parsedInput: any = {}
         try {
@@ -226,6 +231,15 @@ export async function querySonnet(
           console.log('Failed to parse tool arguments:', toolCall.function.arguments)
           parsedInput = { raw_arguments: toolCall.function.arguments }
         }
+        
+        // Create a unique key for deduplication
+        const toolKey = `${toolCall.function.name}:${JSON.stringify(parsedInput)}`
+        
+        // Skip if we've already seen this exact tool call
+        if (seenToolCalls.has(toolKey)) {
+          continue
+        }
+        seenToolCalls.add(toolKey)
         
         const toolUse = {
           type: 'tool_use',
@@ -296,7 +310,7 @@ export async function* query(
   } = {}
 ): AsyncGenerator<AssistantMessage> {
   try {
-    const result = await querySonnet(
+    const result = await queryOpenAI(
       messages,
       ['You are a helpful AI assistant.'],
       0,
@@ -329,13 +343,26 @@ export async function* query(
 }
 
 // Simplified versions of the main query functions
-export const queryHaiku = querySonnet
-export const queryOpus = querySonnet
+export const queryHaiku = queryOpenAI
+export const queryOpus = queryOpenAI
 
 // Additional required exports
-export function formatSystemPromptWithContext(prompt: string, context: any): string {
-  return prompt
+export function formatSystemPromptWithContext(
+  systemPrompt: string[],
+  context: { [k: string]: string },
+): string[] {
+  if (Object.entries(context).length === 0) {
+    return systemPrompt
+  }
+
+  return [
+    ...systemPrompt,
+    `\nAs you answer the user's questions, you can use the following context:\n`,
+    ...Object.entries(context).map(
+      ([key, value]) => `<context name="${key}">${value}</context>`,
+    ),
+  ]
 }
 
 // Export for backward compatibility
-export { query as main }
+export { queryOpenAI as main }

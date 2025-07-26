@@ -13,11 +13,28 @@ import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { getCwd } from '../utils/state'
 import { safeParseJSON } from '../utils/json'
-import {
-  ImageBlockParam,
-  MessageParam,
-  ToolResultBlockParam,
-} from '@anthropic-ai/sdk/resources/index.mjs'
+
+// Define our own types instead of Anthropic types
+type ImageBlockParam = {
+  type: 'image'
+  source: {
+    type: 'base64'
+    media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'
+    data: string
+  }
+}
+
+type MessageParam = {
+  role: 'user' | 'assistant'
+  content: string | Array<{ type: 'text'; text: string } | { type: 'image'; source: any }>
+}
+
+type ToolResultBlockParam = {
+  type: 'tool_result'
+  tool_use_id: string
+  content: string | Array<{ type: 'text'; text: string }>
+}
+
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
@@ -473,7 +490,7 @@ async function callMCPTool({
           source: {
             type: 'base64',
             data: String(item.data),
-            media_type: item.mimeType as ImageBlockParam.Source['media_type'],
+            media_type: item.mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
           },
         }
       }
@@ -543,7 +560,7 @@ export async function runCommand(
                 source: {
                   data: String(message.content.data),
                   media_type: message.content
-                    .mimeType as ImageBlockParam.Source['media_type'],
+                    .mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
                   type: 'base64',
                 },
               },

@@ -30,7 +30,7 @@ export const initializeStatsig = memoize(
     const user = await getUser()
     const options: StatsigOptions = {
       networkConfig: {
-        api: 'https://statsig.anthropic.com/v1/',
+        api: 'https://statsig.cynerza.com/v1/',
       },
       environment: {
         tier:
