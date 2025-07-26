@@ -82,8 +82,8 @@ export function Config({ onClose }: Props): React.ReactNode {
     {
       id: 'provider',
       label: 'AI Provider',
-      value: globalConfig.primaryProvider ?? 'anthropic',
-      options: ['anthropic', 'openai', 'custom'],
+      value: globalConfig.primaryProvider ?? 'openai',
+      options: ['openai', 'custom'],
       type: 'enum',
       onChange(provider: ProviderType) {
         const config = { ...getGlobalConfig(), primaryProvider: provider }
@@ -374,15 +374,15 @@ export function Config({ onClose }: Props): React.ReactNode {
       const changes: string[] = []
       // Check for API key changes
       const initialUsingCustomKey = Boolean(
-        process.env.ANTHROPIC_API_KEY &&
+        process.env.OPENAI_API_KEY &&
           initialConfig.current.customApiKeyResponses?.approved?.includes(
-            normalizeApiKeyForConfig(process.env.ANTHROPIC_API_KEY),
+            normalizeApiKeyForConfig(process.env.OPENAI_API_KEY),
           ),
       )
       const currentUsingCustomKey = Boolean(
-        process.env.ANTHROPIC_API_KEY &&
+        process.env.OPENAI_API_KEY &&
           globalConfig.customApiKeyResponses?.approved?.includes(
-            normalizeApiKeyForConfig(process.env.ANTHROPIC_API_KEY),
+            normalizeApiKeyForConfig(process.env.OPENAI_API_KEY),
           ),
       )
       if (initialUsingCustomKey !== currentUsingCustomKey) {

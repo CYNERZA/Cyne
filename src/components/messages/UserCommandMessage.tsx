@@ -2,7 +2,11 @@ import { Box, Text } from 'ink'
 import * as React from 'react'
 import { getTheme } from '../../utils/theme'
 import { extractTag } from '../../utils/messages'
-import { TextBlockParam } from '@anthropic-ai/sdk/resources/index.mjs'
+// Text block type for OpenAI
+type TextBlockParam = {
+  type: 'text'
+  text: string
+}
 
 type Props = {
   addMargin: boolean

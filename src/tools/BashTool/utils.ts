@@ -1,4 +1,4 @@
-import { queryHaiku } from '../../services/claude'
+import { queryHaiku } from '../../services/cynerza'
 import { extractTag } from '../../utils/messages'
 import { MAX_OUTPUT_LENGTH } from './prompt'
 

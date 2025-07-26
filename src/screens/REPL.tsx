@@ -1,4 +1,10 @@
-import { ToolUseBlockParam } from '@anthropic-ai/sdk/resources/index.mjs'
+// Tool use type for OpenAI
+type ToolUseBlockParam = {
+  type: 'tool_use'
+  id: string
+  name: string
+  input: any
+}
 import { Box, Newline, Static } from 'ink'
 import ProjectOnboarding, {
   markProjectOnboardingComplete,
@@ -304,7 +310,7 @@ export function REPL({
   ) {
     setMessages(oldMessages => [...oldMessages, ...newMessages])
 
-    // Mark onboarding as complete when any user message is sent to Claude
+    // Mark onboarding as complete when any user message is sent to Cynerza
     markProjectOnboardingComplete()
 
     // The last message is an assistant message if the user input was a bash command,

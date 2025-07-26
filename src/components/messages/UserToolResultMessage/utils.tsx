@@ -1,4 +1,10 @@
-import { ToolUseBlockParam } from '@anthropic-ai/sdk/resources/index.mjs'
+// Tool use type for OpenAI
+type ToolUseBlockParam = {
+  type: 'tool_use'
+  id: string
+  name: string
+  input: any
+}
 import { Message } from '../../../query'
 import { useMemo } from 'react'
 import { Tool } from '../../../Tool'

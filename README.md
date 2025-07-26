@@ -5,7 +5,7 @@ Terminal-based AI coding tool that can use any model that supports the OpenAI-st
 - Fixes your spaghetti code
 - Explains wtf that function does
 - Runs tests, shell commands and stuff
-- Whatever else claude-code can do, depending on the model you use
+- Whatever else AI coding assistants can do, depending on the model you use
 
 ## HOW TO USE
 

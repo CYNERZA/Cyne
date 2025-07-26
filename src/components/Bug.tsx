@@ -9,11 +9,11 @@ import { logError, getInMemoryErrors } from '../utils/log'
 import { env } from '../utils/env'
 import { getGitState, getIsGit, GitRepoState } from '../utils/git'
 import { useTerminalSize } from '../hooks/useTerminalSize'
-import { getAnthropicApiKey, getGlobalConfig } from '../utils/config'
+import { getOpenAIApiKey, getGlobalConfig } from '../utils/config'
 import { USER_AGENT } from '../utils/http'
 import { logEvent } from '../services/statsig'
 import { PRODUCT_NAME } from '../constants/product'
-import { API_ERROR_MESSAGE_PREFIX, queryHaiku } from '../services/claude'
+import { API_ERROR_MESSAGE_PREFIX, queryHaiku } from '../services/cynerza'
 import { openBrowser } from '../utils/browser'
 import { useExitOnCtrlCD } from '../hooks/useExitOnCtrlCD'
 import { MACRO } from '../constants/macros'
@@ -215,7 +215,7 @@ export function Bug({ onDone }: Props): React.ReactNode {
               <Text wrap="wrap" dimColor>
                 We will use your feedback to debug related issues or to improve{' '}
                 {PRODUCT_NAME}&apos;s functionality (eg. to reduce the risk of
-                bugs occurring in the future). Anthropic will not train
+                bugs occurring in the future). Cynerza will not train
                 generative models using feedback from {PRODUCT_NAME}.
               </Text>
             </Box>
@@ -315,13 +315,13 @@ async function submitFeedback(
 ): Promise<{ success: boolean; feedbackId?: string }> {
   return { success: true, feedbackId: '123' }
   // try {
-  //   const apiKey = getAnthropicApiKey()
+  //   const apiKey = getOpenAIApiKey()
   //   if (!apiKey) {
   //     return { success: false }
   //   }
 
   //   const response = await fetch(
-  //     'https://api.anthropic.com/api/claude_cli_feedback',
+  //     'https://api.openai.com/api/cyner_cli_feedback',
   //     {
   //       method: 'POST',
   //       headers: {

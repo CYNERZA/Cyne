@@ -1,5 +1,9 @@
 import React from 'react'
-import { TextBlockParam } from '@anthropic-ai/sdk/resources/index.mjs'
+// Text block type for OpenAI
+type TextBlockParam = {
+  type: 'text'
+  text: string
+}
 import { Box, Text } from 'ink'
 import { getTheme } from '../../utils/theme'
 import { logError } from '../../utils/log'

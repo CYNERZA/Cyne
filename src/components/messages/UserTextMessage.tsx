@@ -1,9 +1,13 @@
-import { TextBlockParam } from '@anthropic-ai/sdk/resources/index.mjs'
+// Text block type for OpenAI
+type TextBlockParam = {
+  type: 'text'
+  text: string
+}
 import { UserBashInputMessage } from './UserBashInputMessage'
 import { UserCommandMessage } from './UserCommandMessage'
 import { UserPromptMessage } from './UserPromptMessage'
 import * as React from 'react'
-import { NO_CONTENT_MESSAGE } from '../../services/claude'
+import { NO_CONTENT_MESSAGE } from '../../services/cynerza'
 
 type Props = {
   addMargin: boolean

@@ -1,4 +1,8 @@
-import { TextBlockParam } from '@anthropic-ai/sdk/resources/index.mjs'
+// Text block type for OpenAI
+type TextBlockParam = {
+  type: 'text'
+  text: string
+}
 import React from 'react'
 import { AssistantBashOutputMessage } from './AssistantBashOutputMessage'
 import { AssistantLocalCommandOutputMessage } from './AssistantLocalCommandOutputMessage'
@@ -10,7 +14,7 @@ import {
   CREDIT_BALANCE_TOO_LOW_ERROR_MESSAGE,
   INVALID_API_KEY_ERROR_MESSAGE,
   PROMPT_TOO_LONG_ERROR_MESSAGE,
-} from '../../services/claude.js'
+} from '../../services/cynerza.js'
 import {
   CANCEL_MESSAGE,
   INTERRUPT_MESSAGE,
@@ -74,7 +78,7 @@ export function AssistantTextMessage({
   }
 
   switch (text) {
-    // Local JSX commands don't need a response, but we still want Claude to see them
+    // Local JSX commands don't need a response, but we still want Cynerza to see them
     // Tool results render their own interrupt messages
     case NO_RESPONSE_REQUESTED:
     case INTERRUPT_MESSAGE_FOR_TOOL_USE:
@@ -105,7 +109,7 @@ export function AssistantTextMessage({
           &nbsp;&nbsp;⎿ &nbsp;
           <Text color={getTheme().error}>
             Credit balance too low &middot; Add funds:
-            https://console.anthropic.com/settings/billing
+            https://platform.openai.com/settings/billing
           </Text>
         </Text>
       )

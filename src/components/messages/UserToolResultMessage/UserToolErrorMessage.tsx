@@ -1,4 +1,10 @@
-import { ToolResultBlockParam } from '@anthropic-ai/sdk/resources/index.mjs'
+// Tool result type for OpenAI
+type ToolResultBlockParam = {
+  type: 'tool_result'
+  tool_use_id: string
+  content: string | any[]
+  is_error?: boolean
+}
 import { Box, Text } from 'ink'
 import * as React from 'react'
 import { getTheme } from '../../../utils/theme'

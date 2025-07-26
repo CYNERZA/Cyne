@@ -1,6 +1,20 @@
-import { TextBlock, ToolUseBlock } from '@anthropic-ai/sdk/resources/index.mjs'
 import { AssistantMessage, BinaryFeedbackResult } from '../../query'
-import { MAIN_QUERY_TEMPERATURE } from '../../services/claude'
+
+// Text and tool use block types for OpenAI
+type TextBlock = {
+  type: 'text'
+  text: string
+}
+
+type ToolUseBlock = {
+  type: 'tool_use'
+  id: string
+  name: string
+  input: any
+}
+
+import { MAIN_QUERY_TEMPERATURE } from '../../services/cynerza'
+import { Message } from '../../query'
 import { getDynamicConfig, logEvent } from '../../services/statsig'
 
 import { isEqual, zip } from 'lodash-es'

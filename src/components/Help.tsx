@@ -34,7 +34,7 @@ export function Help({
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Text bold color={theme.claude}>
+      <Text bold color={theme.cynerza}>
         {`${PRODUCT_NAME} v${MACRO.VERSION}`}
       </Text>
 

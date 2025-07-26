@@ -7,7 +7,7 @@ import { OAUTH_CONFIG } from '../constants/oauth'
 import { openBrowser } from '../utils/browser'
 import { logEvent } from '../services/statsig'
 import { logError } from '../utils/log'
-import { resetAnthropicClient } from './claude'
+import { resetOpenAIClient } from './cynerza'
 import {
   AccountInfo,
   getGlobalConfig,
@@ -340,8 +340,8 @@ export async function createAndStoreApiKey(
       // Save config
       saveGlobalConfig(config)
 
-      // Reset the Anthropic client to force creation with new API key
-      resetAnthropicClient()
+      // Reset the OpenAI client to force creation with new API key
+      resetOpenAIClient()
 
       return apiKey
     }

@@ -1,15 +1,31 @@
 import { Box } from 'ink'
 import * as React from 'react'
 import type { AssistantMessage, Message, UserMessage } from '../query'
-import type {
-  ContentBlock,
-  DocumentBlockParam,
-  ImageBlockParam,
-  TextBlockParam,
-  ThinkingBlockParam,
-  ToolResultBlockParam,
-  ToolUseBlockParam,
-} from '@anthropic-ai/sdk/resources/index.mjs'
+
+// Content block types for OpenAI
+type ContentBlock = any
+type DocumentBlockParam = any
+type ImageBlockParam = any
+type TextBlockParam = {
+  type: 'text'
+  text: string
+}
+type ThinkingBlockParam = {
+  type: 'thinking'
+  thinking: string
+}
+type ToolResultBlockParam = {
+  type: 'tool_result'
+  tool_use_id: string
+  content: string | any[]
+  is_error?: boolean
+}
+type ToolUseBlockParam = {
+  type: 'tool_use'
+  id: string
+  name: string
+  input: any
+}
 import { Tool } from '../Tool'
 import { logError } from '../utils/log'
 import { UserToolResultMessage } from './messages/UserToolResultMessage/UserToolResultMessage'

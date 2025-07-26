@@ -122,7 +122,7 @@ export function ModelSelector({
 
   // State for model configuration
   const [selectedProvider, setSelectedProvider] = useState<ProviderType>(
-    config.primaryProvider ?? 'anthropic',
+    config.primaryProvider ?? 'openai',
   )
   const [selectedModel, setSelectedModel] = useState<string>('')
   const [apiKey, setApiKey] = useState<string>('')

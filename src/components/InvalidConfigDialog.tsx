@@ -18,7 +18,7 @@ interface InvalidConfigDialogProps {
 }
 
 /**
- * Dialog shown when the Claude config file contains invalid JSON
+ * Dialog shown when the Cynerza config file contains invalid JSON
  */
 function InvalidConfigDialog({
   filePath,

@@ -250,13 +250,13 @@ export function WelcomeBox(): React.ReactNode {
   const theme = getTheme()
   return (
     <Box
-      borderColor={theme.claude}
+      borderColor={theme.cynerza}
       borderStyle="round"
       paddingX={1}
       width={MIN_LOGO_WIDTH}
     >
       <Text>
-        <Text color={theme.claude}>✻</Text> Welcome to{' '}
+        <Text color={theme.cynerza}>✻</Text> Welcome to{' '}
         <Text bold>{PRODUCT_NAME}</Text> research preview!
       </Text>
     </Box>

@@ -1,7 +1,13 @@
 import { Box, Text } from 'ink'
 import React from 'react'
 import { logError } from '../../utils/log'
-import { ToolUseBlockParam } from '@anthropic-ai/sdk/resources/index.mjs'
+// Tool use type for OpenAI
+type ToolUseBlockParam = {
+  type: 'tool_use'
+  id: string
+  name: string
+  input: any
+}
 import { Tool } from '../../Tool'
 import { Cost } from '../Cost'
 import { ToolUseLoader } from '../ToolUseLoader'

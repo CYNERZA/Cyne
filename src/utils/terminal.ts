@@ -1,4 +1,4 @@
-import { queryHaiku } from '../services/claude'
+import { queryHaiku } from '../services/cynerza'
 import { safeParseJSON } from './json'
 import { logError } from './log'
 

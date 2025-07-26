@@ -4,7 +4,7 @@ import { getTheme } from '../utils/theme'
 import { PRODUCT_NAME } from '../constants/product'
 import {
   isDefaultApiKey,
-  getAnthropicApiKey,
+  getOpenAIApiKey,
   getGlobalConfig,
 } from '../utils/config'
 import { getCwd } from '../utils/state'
@@ -28,7 +28,7 @@ export function Logo({
     (config.largeModelName === config.smallModelName
       ? config.largeModelName
       : config.largeModelName + ' | ' + config.smallModelName)
-  const apiKey = getAnthropicApiKey()
+  const apiKey = getOpenAIApiKey()
   const isCustomApiKey = !isDefaultApiKey()
   const hasOverrides = Boolean(
     isCustomApiKey ||
@@ -40,7 +40,7 @@ export function Logo({
   return (
     <Box flexDirection="column">
       <Box
-        borderColor={theme.claude}
+        borderColor={theme.cynerza}
         borderStyle="round"
         flexDirection="column"
         gap={1}
@@ -48,7 +48,7 @@ export function Logo({
         width={width}
       >
         <Text>
-          <Text color={theme.claude}>✻</Text> Welcome to{' '}
+          <Text color={theme.cynerza}>✻</Text> Welcome to{' '}
           <Text bold>{PRODUCT_NAME}</Text> <Text>research preview!</Text>
         </Text>
         <AsciiLogo />
@@ -108,10 +108,10 @@ export function Logo({
                   <Text bold>{process.env.MAX_THINKING_TOKENS}</Text>
                 </Text>
               ) : null}
-              {process.env.ANTHROPIC_BASE_URL ? (
+              {process.env.OPENAI_BASE_URL ? (
                 <Text color={theme.secondaryText}>
                   • API Base URL:{' '}
-                  <Text bold>{process.env.ANTHROPIC_BASE_URL}</Text>
+                  <Text bold>{process.env.OPENAI_BASE_URL}</Text>
                 </Text>
               ) : null}
             </Box>

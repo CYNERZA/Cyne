@@ -21,7 +21,7 @@ import { PROJECT_FILE } from './constants/product'
 /**
  * Find all CYNERING.md files in the current working directory
  */
-export async function getClaudeFiles(): Promise<string | null> {
+export async function getCynerzaFiles(): Promise<string | null> {
   const abortController = new AbortController()
   const timeout = setTimeout(() => abortController.abort(), 3000)
   try {
@@ -161,11 +161,11 @@ export const getContext = memoize(
     const codeStyle = getCodeStyle()
     const projectConfig = getCurrentProjectConfig()
     const dontCrawl = projectConfig.dontCrawlDirectory
-    const [gitStatus, directoryStructure, claudeFiles, readme] =
+    const [gitStatus, directoryStructure, cynerzaFiles, readme] =
       await Promise.all([
         getGitStatus(),
         dontCrawl ? Promise.resolve('') : getDirectoryStructure(),
-        dontCrawl ? Promise.resolve('') : getClaudeFiles(),
+        dontCrawl ? Promise.resolve('') : getCynerzaFiles(),
         getReadme(),
       ])
     return {
@@ -173,14 +173,14 @@ export const getContext = memoize(
       ...(directoryStructure ? { directoryStructure } : {}),
       ...(gitStatus ? { gitStatus } : {}),
       ...(codeStyle ? { codeStyle } : {}),
-      ...(claudeFiles ? { claudeFiles } : {}),
+      ...(cynerzaFiles ? { cynerzaFiles } : {}),
       ...(readme ? { readme } : {}),
     }
   },
 )
 
 /**
- * Approximate directory structure, to orient Claude. Claude will start with this, then use
+ * Approximate directory structure, to orient Cynerza. Cynerza will start with this, then use
  * tools like LS and View to get more information.
  */
 export const getDirectoryStructure = memoize(

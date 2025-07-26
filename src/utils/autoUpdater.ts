@@ -14,7 +14,7 @@ import { platform } from 'process'
 import { execFileNoThrow } from './execFileNoThrow'
 import { logError } from './log'
 import { accessSync } from 'fs'
-import { CLAUDE_BASE_DIR } from './env'
+import { CYNERZA_BASE_DIR } from './env'
 import { logEvent, getDynamicConfig } from '../services/statsig'
 import { lt } from 'semver'
 import { MACRO } from '../constants/macros'
@@ -66,7 +66,7 @@ This will ensure you have access to the latest features and improvements.
 }
 
 // Lock file for auto-updater to prevent concurrent updates
-export const LOCK_FILE_PATH = join(CLAUDE_BASE_DIR, '.update.lock')
+export const LOCK_FILE_PATH = join(CYNERZA_BASE_DIR, '.update.lock')
 const LOCK_TIMEOUT_MS = 5 * 60 * 1000 // 5 minute timeout for locks
 
 /**
@@ -76,8 +76,8 @@ const LOCK_TIMEOUT_MS = 5 * 60 * 1000 // 5 minute timeout for locks
 function acquireLock(): boolean {
   try {
     // Ensure the base directory exists
-    if (!existsSync(CLAUDE_BASE_DIR)) {
-      mkdirSync(CLAUDE_BASE_DIR, { recursive: true })
+    if (!existsSync(CYNERZA_BASE_DIR)) {
+      mkdirSync(CYNERZA_BASE_DIR, { recursive: true })
     }
 
     // Check if lock file exists and is not stale
@@ -305,7 +305,7 @@ export async function installGlobalPackage(): Promise<InstallStatus> {
     ])
     if (installResult.code !== 0) {
       logError(
-        `Failed to install new version of claude: ${installResult.stdout} ${installResult.stderr}`,
+        `Failed to install new version of cynerza: ${installResult.stdout} ${installResult.stderr}`,
       )
       return 'install_failed'
     }

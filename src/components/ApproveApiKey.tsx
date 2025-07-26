@@ -67,7 +67,7 @@ export function ApproveApiKey({
         </Text>
         <Text>
           Your environment sets{' '}
-          <Text color={theme.warning}>ANTHROPIC_API_KEY</Text>:{' '}
+          <Text color={theme.warning}>OPENAI_API_KEY</Text>:{' '}
           <Text bold>sk-ant-...{customApiKeyTruncated}</Text>
         </Text>
         <Text>Do you want to use this API key?</Text>

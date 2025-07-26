@@ -36,10 +36,6 @@
     "@img/sharp-win32-x64": "^0.33.5"
   },
   "dependencies": {
-    "@anthropic-ai/bedrock-sdk": "^0.12.4",
-    "@anthropic-ai/claude-code": "^0.2.29",
-    "@anthropic-ai/sdk": "^0.39.0",
-    "@anthropic-ai/vertex-sdk": "^0.7.0",
     "@commander-js/extra-typings": "^13.1.0",
     "@inkjs/ui": "^2.0.0",
     "@modelcontextprotocol/sdk": "^1.6.1",

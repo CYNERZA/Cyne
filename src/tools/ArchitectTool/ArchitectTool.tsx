@@ -1,4 +1,8 @@
-import type { TextBlock } from '@anthropic-ai/sdk/resources/index.mjs'
+// Text block type for OpenAI
+type TextBlock = {
+  type: 'text'
+  text: string
+}
 import { Box } from 'ink'
 import * as React from 'react'
 import { z } from 'zod'

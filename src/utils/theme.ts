@@ -2,7 +2,7 @@ import { getGlobalConfig } from './config'
 
 export interface Theme {
   bashBorder: string
-  claude: string
+  cynerza: string
   permission: string
   secondaryBorder: string
   text: string
@@ -22,7 +22,7 @@ export interface Theme {
 
 const lightTheme: Theme = {
   bashBorder: '#20B2AA',
-  claude: '#9ACD32',
+  cynerza: '#9ACD32',
   permission: '#FF8C00',
   secondaryBorder: '#999',
   text: '#000',
@@ -41,7 +41,7 @@ const lightTheme: Theme = {
 
 const lightDaltonizedTheme: Theme = {
   bashBorder: '#20B2AA', // Light sea green for better contrast
-  claude: '#9ACD32', // Yellowish green for better visibility
+  cynerza: '#9ACD32', // Yellowish green for better visibility
   permission: '#FF8C00', // Orange for better visibility and contrast
   secondaryBorder: '#999',
   text: '#000',
@@ -60,7 +60,7 @@ const lightDaltonizedTheme: Theme = {
 
 const darkTheme: Theme = {
   bashBorder: '#48D1CC',
-  claude: '#9ACD32',
+  cynerza: '#9ACD32',
   permission: '#FFA500',
   secondaryBorder: '#888',
   text: '#fff',
@@ -79,7 +79,7 @@ const darkTheme: Theme = {
 
 const darkDaltonizedTheme: Theme = {
   bashBorder: '#48D1CC', // Medium turquoise for better visibility
-  claude: '#9ACD32', // Yellowish green for better visibility
+  cynerza: '#9ACD32', // Yellowish green for better visibility
   permission: '#FFA500', // Orange for better visibility in dark theme
   secondaryBorder: '#888',
   text: '#fff',

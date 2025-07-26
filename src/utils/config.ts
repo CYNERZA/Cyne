@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { resolve, join } from 'path'
 import { cloneDeep, memoize, pick } from 'lodash-es'
 import { homedir } from 'os'
-import { GLOBAL_CLAUDE_FILE } from './env'
+import { GLOBAL_CYNERZA_FILE } from './env'
 import { getCwd } from './state'
 import { randomBytes } from 'crypto'
 import { safeParseJSON } from './json'
@@ -87,7 +87,6 @@ export type NotificationChannel =
   | 'notifications_disabled'
 
 export type ProviderType =
-  | 'anthropic'
   | 'openai'
   | 'mistral'
   | 'deepseek'
@@ -153,7 +152,7 @@ export const DEFAULT_GLOBAL_CONFIG: GlobalConfig = {
   theme: 'dark' as ThemeNames,
   preferredNotifChannel: 'iterm2',
   verbose: false,
-  primaryProvider: 'anthropic' as ProviderType,
+  primaryProvider: 'openai' as ProviderType,
   customApiKeyResponses: {
     approved: [],
     rejected: [],
@@ -193,7 +192,7 @@ export type ProjectConfigKey = (typeof PROJECT_CONFIG_KEYS)[number]
 
 export function checkHasTrustDialogAccepted(): boolean {
   let currentPath = getCwd()
-  const config = getConfig(GLOBAL_CLAUDE_FILE, DEFAULT_GLOBAL_CONFIG)
+  const config = getConfig(GLOBAL_CYNERZA_FILE, DEFAULT_GLOBAL_CONFIG)
 
   while (true) {
     const projectConfig = config.projects?.[currentPath]
@@ -241,10 +240,10 @@ export function saveGlobalConfig(config: GlobalConfig): void {
     return
   }
   saveConfig(
-    GLOBAL_CLAUDE_FILE,
+    GLOBAL_CYNERZA_FILE,
     {
       ...config,
-      projects: getConfig(GLOBAL_CLAUDE_FILE, DEFAULT_GLOBAL_CONFIG).projects,
+      projects: getConfig(GLOBAL_CYNERZA_FILE, DEFAULT_GLOBAL_CONFIG).projects,
     },
     DEFAULT_GLOBAL_CONFIG,
   )
@@ -254,7 +253,7 @@ export function getGlobalConfig(): GlobalConfig {
   if (process.env.NODE_ENV === 'test') {
     return TEST_GLOBAL_CONFIG_FOR_TESTING
   }
-  return getConfig(GLOBAL_CLAUDE_FILE, DEFAULT_GLOBAL_CONFIG)
+  return getConfig(GLOBAL_CYNERZA_FILE, DEFAULT_GLOBAL_CONFIG)
 }
 
 // TODO: Decide what to do with this code
@@ -284,18 +283,13 @@ export function getGlobalConfig(): GlobalConfig {
 //   return null
 // }
 
-export function getAnthropicApiKey(): null | string {
-  const config = getGlobalConfig()
-  return process.env.SMALL_MODEL_API_KEY
-}
-
 export function normalizeApiKeyForConfig(apiKey: string): string {
   return apiKey?.slice(-20) ?? ''
 }
 
 export function isDefaultApiKey(): boolean {
   const config = getGlobalConfig()
-  const apiKey = getAnthropicApiKey()
+  const apiKey = getOpenAIApiKey()
   return apiKey === config.primaryApiKey
 }
 
@@ -336,7 +330,7 @@ export function enableConfigs(): void {
   configReadingAllowed = true
   // We only check the global config because currently all the configs share a file
   getConfig(
-    GLOBAL_CLAUDE_FILE,
+    GLOBAL_CYNERZA_FILE,
     DEFAULT_GLOBAL_CONFIG,
     true /* throw on invalid */,
   )
@@ -410,7 +404,7 @@ export function getCurrentProjectConfig(): ProjectConfig {
   }
 
   const absolutePath = resolve(getCwd())
-  const config = getConfig(GLOBAL_CLAUDE_FILE, DEFAULT_GLOBAL_CONFIG)
+  const config = getConfig(GLOBAL_CYNERZA_FILE, DEFAULT_GLOBAL_CONFIG)
 
   if (!config.projects) {
     return defaultConfigForProject(absolutePath)
@@ -434,9 +428,9 @@ export function saveCurrentProjectConfig(projectConfig: ProjectConfig): void {
     }
     return
   }
-  const config = getConfig(GLOBAL_CLAUDE_FILE, DEFAULT_GLOBAL_CONFIG)
+  const config = getConfig(GLOBAL_CYNERZA_FILE, DEFAULT_GLOBAL_CONFIG)
   saveConfig(
-    GLOBAL_CLAUDE_FILE,
+    GLOBAL_CYNERZA_FILE,
     {
       ...config,
       projects: {
@@ -650,8 +644,9 @@ export function listConfigForCLI(global: boolean): object {
   }
 }
 
-export function getOpenAIApiKey(): string | undefined {
-  return process.env.OPENAI_API_KEY
+export function getOpenAIApiKey(): null | string {
+  const config = getGlobalConfig()
+  return process.env.OPENAI_API_KEY || config.primaryApiKey || null
 }
 
 export function addApiKey(

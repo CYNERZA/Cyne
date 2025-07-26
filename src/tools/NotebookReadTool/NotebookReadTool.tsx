@@ -1,7 +1,13 @@
-import type {
-  ImageBlockParam,
-  TextBlockParam,
-} from '@anthropic-ai/sdk/resources/index.mjs'
+// Image and text block types for OpenAI
+type ImageBlockParam = {
+  type: 'image'
+  source: any
+}
+
+type TextBlockParam = {
+  type: 'text'
+  text: string
+}
 
 import { existsSync, readFileSync } from 'fs'
 import { Text } from 'ink'

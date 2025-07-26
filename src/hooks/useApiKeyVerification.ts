@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
-import { verifyApiKey } from '../services/claude'
-import { getAnthropicApiKey, isDefaultApiKey } from '../utils/config'
+import { verifyApiKey } from '../services/cynerza'
+import { getOpenAIApiKey, isDefaultApiKey } from '../utils/config'
 
 export type VerificationStatus =
   | 'loading'
@@ -17,7 +17,7 @@ export type ApiKeyVerificationResult = {
 
 export function useApiKeyVerification(): ApiKeyVerificationResult {
   // const [status, setStatus] = useState<VerificationStatus>(() => {
-  //   const apiKey = getAnthropicApiKey()
+  //   const apiKey = getOpenAIApiKey()
   //   return apiKey ? 'loading' : 'missing'
   // })
   // const [error, setError] = useState<Error | null>(null)
@@ -28,7 +28,7 @@ export function useApiKeyVerification(): ApiKeyVerificationResult {
   //     return
   //   }
 
-  //   const apiKey = getAnthropicApiKey()
+  //   const apiKey = getOpenAIApiKey()
   //   if (!apiKey) {
   //     const newStatus = 'missing' as const
   //     setStatus(newStatus)

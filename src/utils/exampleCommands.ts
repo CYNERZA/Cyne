@@ -6,7 +6,7 @@ import {
 } from './config.js'
 import { env } from './env'
 import { getCwd } from './state'
-import { queryHaiku } from '../services/claude'
+import { queryHaiku } from '../services/cynerza'
 import { exec } from 'child_process'
 import { logError } from './log'
 import { memoize, sample } from 'lodash-es'

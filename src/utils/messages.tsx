@@ -14,16 +14,18 @@ import { last, memoize } from 'lodash-es'
 import { logEvent } from '../services/statsig'
 import type { SetToolJSXFn, Tool, ToolUseContext } from '../Tool'
 import { lastX } from '../utils/generators'
-import { NO_CONTENT_MESSAGE } from '../services/claude'
-import {
-  ImageBlockParam,
-  TextBlockParam,
-  ToolResultBlockParam,
-  ToolUseBlockParam,
-  Message as APIMessage,
-  ContentBlockParam,
-  ContentBlock,
-} from '@anthropic-ai/sdk/resources/index.mjs'
+import { NO_CONTENT_MESSAGE } from '../services/cynerza'
+
+// OpenAI type replacements
+type ImageBlockParam = { type: 'image'; source: any }
+type TextBlockParam = { type: 'text'; text: string }
+type ToolResultBlockParam = { type: 'tool_result'; tool_use_id: string; content: string | any[]; is_error?: boolean }
+type ToolUseBlockParam = { type: 'tool_use'; id: string; name: string; input: any }
+type APIMessage = any
+type ContentBlockParam = any
+type ContentBlock = any
+type ToolUseBlock = { type: 'tool_use'; id: string; name: string; input: any }
+
 import { setCwd } from './state'
 import { getCwd } from './state'
 import chalk from 'chalk'
@@ -31,7 +33,6 @@ import * as React from 'react'
 import { UserBashInputMessage } from '../components/messages/UserBashInputMessage'
 import { Spinner } from '../components/Spinner'
 import { BashTool } from '../tools/BashTool/BashTool'
-import { ToolUseBlock } from '@anthropic-ai/sdk/resources/index.mjs'
 
 export const INTERRUPT_MESSAGE = '[Request interrupted by user]'
 export const INTERRUPT_MESSAGE_FOR_TOOL_USE =
@@ -508,11 +509,16 @@ export function isNotEmptyMessage(message: Message): boolean {
     return true
   }
 
+  // Safety check for message structure
+  if (!message.message || message.message.content === undefined) {
+    return false
+  }
+
   if (typeof message.message.content === 'string') {
     return message.message.content.trim().length > 0
   }
 
-  if (message.message.content.length === 0) {
+  if (!Array.isArray(message.message.content) || message.message.content.length === 0) {
     return false
   }
 
@@ -558,6 +564,12 @@ export function normalizeMessages(messages: Message[]): NormalizedMessage[] {
     if (message.type === 'progress') {
       return [message] as NormalizedMessage[]
     }
+    
+    // Safety check for message structure
+    if (!message.message || !message.message.content) {
+      return [message] as NormalizedMessage[]
+    }
+    
     if (typeof message.message.content === 'string') {
       return [message] as NormalizedMessage[]
     }
@@ -603,6 +615,8 @@ function isToolUseRequestMessage(
     message.type === 'assistant' &&
     'costUSD' in message &&
     // Note: stop_reason === 'tool_use' is unreliable -- it's not always set correctly
+    message.message && 
+    Array.isArray(message.message.content) &&
     message.message.content.some(_ => _.type === 'tool_use')
   )
 }
@@ -877,8 +891,8 @@ export function getLastAssistantMessageId(
   // Iterate from the end of the array to find the last assistant message
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i]
-    if (message && message.type === 'assistant') {
-      return message.message.id
+    if (message && message.type === 'assistant' && message.message && 'id' in message.message) {
+      return (message.message as any).id
     }
   }
   return undefined

@@ -74,9 +74,9 @@ export default function ProjectOnboarding({
 
   // Load what we need for onboarding
   // NOTE: This whole component is statically rendered Once
-  const hasClaudeMd = existsSync(join(workspaceDir, PROJECT_FILE))
+  const hasCynerzaMd = existsSync(join(workspaceDir, PROJECT_FILE))
   const isWorkspaceDirEmpty = isDirEmpty(workspaceDir)
-  const needsClaudeMd = !hasClaudeMd && !isWorkspaceDirEmpty
+  const needsCynerzaMd = !hasCynerzaMd && !isWorkspaceDirEmpty
   const showTerminalTip =
     terminalSetup.isEnabled && !getGlobalConfig().shiftEnterKeyBindingInstalled
 
@@ -102,9 +102,9 @@ export default function ProjectOnboarding({
                   </OrderedList.Item>,
                 )
               }
-              if (needsClaudeMd) {
+              if (needsCynerzaMd) {
                 items.push(
-                  <OrderedList.Item key="claudemd">
+                  <OrderedList.Item key="cynerzamd">
                     <Text color={theme.secondaryText}>
                       Run <Text color={theme.text}>/init</Text> to create
                       a&nbsp;

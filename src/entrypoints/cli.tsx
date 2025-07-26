@@ -6,8 +6,8 @@ initSentry() // Initialize Sentry as early as possible
 // XXX: Without this line (and the Object.keys, even though it seems like it does nothing!),
 // there is a bug in Bun only on Win32 that causes this import to be removed, even though
 // its use is solely because of its side-effects.
-import * as dontcare from '@anthropic-ai/sdk/shims/node'
-Object.keys(dontcare)
+// OpenAI SDK import placeholder
+// OpenAI SDK initialization
 
 import React from 'react'
 import { ReadStream } from 'tty'
@@ -121,9 +121,9 @@ async function showSetupScreens(
   }
 
   // // Check for custom API key (only allowed for ants)
-  // if (process.env.ANTHROPIC_API_KEY && process.env.USER_TYPE === 'ant') {
+  // if (process.env.OPENAI_API_KEY && process.env.USER_TYPE === 'ant') {
   //   const customApiKeyTruncated = normalizeApiKeyForConfig(
-  //     process.env.ANTHROPIC_API_KEY!,
+  //     process.env.OPENAI_API_KEY!,
   //   )
   //   const keyStatus = getCustomApiKeyStatus(customApiKeyTruncated)
   //   if (keyStatus === 'new') {
@@ -451,7 +451,7 @@ ${commandList}`,
   //     })
   // }
 
-  // claude config
+  // cynerza config
   const config = program
     .command('config')
     .description(
@@ -506,7 +506,7 @@ ${commandList}`,
       process.exit(0)
     })
 
-  // claude approved-tools
+  // cynerza approved-tools
 
   const allowedTools = program
     .command('approved-tools')
@@ -534,7 +534,7 @@ ${commandList}`,
       process.exit(result.success ? 0 : 1)
     })
 
-  // claude mcp
+  // cynerza mcp
 
   const mcp = program
     .command('mcp')
@@ -876,11 +876,11 @@ ${commandList}`,
       process.exit(0)
     })
 
-  // Import servers from Claude Desktop
+  // Import servers from Cynerza Desktop
   mcp
-    .command('add-from-claude-desktop')
+    .command('add-from-cynerza-desktop')
     .description(
-      'Import MCP servers from Claude Desktop (Mac, Windows and WSL)',
+      'Import MCP servers from Cynerza Desktop (Mac, Windows and WSL)',
     )
     .option(
       '-s, --scope <scope>',
@@ -912,17 +912,17 @@ ${commandList}`,
           process.exit(1)
         }
 
-        // Get Claude Desktop config path
+        // Get Cynerza Desktop config path
         let configPath
         if (platform === 'darwin') {
           configPath = join(
             process.env.HOME || '~',
-            'Library/Application Support/Claude/claude_desktop_config.json',
+            'Library/Application Support/Cynerza/cynerza_desktop_config.json',
           )
         } else if (platform === 'win32') {
           configPath = join(
             process.env.APPDATA || '',
-            'Claude/claude_desktop_config.json',
+            'Cynerza/cynerza_desktop_config.json',
           )
         } else if (isWSL) {
           // Get Windows username
@@ -936,13 +936,13 @@ ${commandList}`,
             )
           })
 
-          configPath = `/mnt/c/Users/${whoamiCommand}/AppData/Roaming/Claude/claude_desktop_config.json`
+          configPath = `/mnt/c/Users/${whoamiCommand}/AppData/Roaming/Cynerza/cynerza_desktop_config.json`
         }
 
         // Check if config file exists
         if (!existsSync(configPath)) {
           console.error(
-            `Error: Claude Desktop config file not found at ${configPath}`,
+            `Error: Cynerza Desktop config file not found at ${configPath}`,
           )
           process.exit(1)
         }
@@ -963,7 +963,7 @@ ${commandList}`,
         const numServers = serverNames.length
 
         if (numServers === 0) {
-          console.log('No MCP servers found in Claude Desktop config')
+          console.log('No MCP servers found in Cynerza Desktop config')
           process.exit(0)
         }
 
@@ -997,7 +997,7 @@ ${commandList}`,
         // Use Ink to render a nice UI for selection
         await new Promise<void>(resolve => {
           // Create a component for the server selection
-          function ClaudeDesktopImport() {
+          function CynerzaDesktopImport() {
             const { useState } = reactModule
             const [isFinished, setIsFinished] = useState(false)
             const [importResults, setImportResults] = useState<
@@ -1095,17 +1095,17 @@ ${commandList}`,
                 <Box
                   flexDirection="column"
                   borderStyle="round"
-                  borderColor={theme.claude}
+                  borderColor={theme.cynerza}
                   padding={1}
                   width={'100%'}
                 >
-                  <Text bold color={theme.claude}>
-                    Import MCP Servers from Claude Desktop
+                  <Text bold color={theme.cynerza}>
+                    Import MCP Servers from Cynerza Desktop
                   </Text>
 
                   <Box marginY={1}>
                     <Text>
-                      Found {numServers} MCP servers in Claude Desktop.
+                      Found {numServers} MCP servers in Cynerza Desktop.
                     </Text>
                   </Box>
 
@@ -1143,7 +1143,7 @@ ${commandList}`,
           }
 
           // Render the component
-          const { unmount } = render(<ClaudeDesktopImport />)
+          const { unmount } = render(<CynerzaDesktopImport />)
 
           // Clean up when done
           setTimeout(() => {
@@ -1174,7 +1174,7 @@ ${commandList}`,
     process.exit(0)
   }
 
-  // New command name to match Claude Code
+  // New command name to match Cynerza cyner
   mcp
     .command('reset-project-choices')
     .description(
@@ -1213,14 +1213,14 @@ ${commandList}`,
 
   // ant-only commands
 
-  // claude update
+  // cynerza update
   program
     .command('update')
     .description('Check for updates and install if available')
     .action(async () => {
       const useExternalUpdater = await checkGate(GATE_USE_EXTERNAL_UPDATER)
       if (useExternalUpdater) {
-        // The external updater intercepts calls to "claude update", which means if we have received
+        // The external updater intercepts calls to "cynerza update", which means if we have received
         // this command at all, the extenral updater isn't installed on this machine.
         console.log(`This version of ${PRODUCT_NAME} is no longer supported.`)
         process.exit(0)
@@ -1271,7 +1271,7 @@ ${commandList}`,
       process.exit(0)
     })
 
-  // claude log
+  // cynerza log
   program
     .command('log')
     .description('Manage conversation logs.')
@@ -1292,7 +1292,7 @@ ${commandList}`,
       context.unmount = unmount
     })
 
-  // claude resume
+  // cynerza resume
   program
     .command('resume')
     .description(
@@ -1396,7 +1396,7 @@ ${commandList}`,
       },
     )
 
-  // claude error
+  // cynerza error
   program
     .command('error')
     .description(
@@ -1419,7 +1419,7 @@ ${commandList}`,
       context.unmount = unmount
     })
 
-  // claude context (TODO: deprecate)
+  // cynerza context (TODO: deprecate)
   const context = program
     .command('context')
     .description(

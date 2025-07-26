@@ -412,7 +412,8 @@ export async function getCompletion(
       })),
     ),
   })
-  opts = structuredClone(opts)
+  // Use JSON parse/stringify instead of structuredClone to avoid issues with functions
+  opts = JSON.parse(JSON.stringify(opts))
 
   // Apply model-specific parameter transformations (e.g. max_tokens → max_completion_tokens for o1/o3 models)
   applyModelSpecificTransformations(opts)

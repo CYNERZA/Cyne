@@ -161,7 +161,7 @@ export function ConsoleOAuthFlow({ onDone }: Props): React.ReactNode {
 
       if (apiKey) {
         setOAuthStatus({ state: 'success', apiKey })
-        sendNotification({ message: 'Claude Code login successful' })
+        sendNotification({ message: 'Cynerza cyner login successful' })
       } else {
         setOAuthStatus({
           state: 'error',
@@ -192,7 +192,7 @@ export function ConsoleOAuthFlow({ onDone }: Props): React.ReactNode {
         return (
           <Box flexDirection="column" gap={1}>
             <Text bold>
-              {PRODUCT_NAME} is billed based on API usage through your Anthropic
+              {PRODUCT_NAME} is billed based on API usage through your OpenAI
               Console account.
             </Text>
 
@@ -204,7 +204,7 @@ export function ConsoleOAuthFlow({ onDone }: Props): React.ReactNode {
 
             <Box marginTop={1}>
               <Text color={theme.permission}>
-                Press <Text bold>Enter</Text> to login to your Anthropic Console
+                Press <Text bold>Enter</Text> to login to your OpenAI Console
                 account…
               </Text>
             </Box>
@@ -244,7 +244,7 @@ export function ConsoleOAuthFlow({ onDone }: Props): React.ReactNode {
           <Box flexDirection="column" gap={1}>
             <Box>
               <SimpleSpinner />
-              <Text>Creating API key for Claude Code…</Text>
+              <Text>Creating API key for Cynerza cyner…</Text>
             </Box>
           </Box>
         )

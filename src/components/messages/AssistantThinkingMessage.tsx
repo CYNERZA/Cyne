@@ -2,10 +2,17 @@ import React from 'react'
 import { Box, Text } from 'ink'
 import { getTheme } from '../../utils/theme'
 import { applyMarkdown } from '../../utils/markdown'
-import {
-  ThinkingBlock,
-  ThinkingBlockParam,
-} from '@anthropic-ai/sdk/resources/index.mjs'
+
+// Thinking block types for OpenAI
+type ThinkingBlock = {
+  type: 'thinking'
+  thinking: string
+}
+
+type ThinkingBlockParam = {
+  type: 'thinking'
+  thinking: string
+}
 
 type Props = {
   param: ThinkingBlock | ThinkingBlockParam

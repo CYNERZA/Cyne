@@ -3,15 +3,21 @@ import { memoize } from 'lodash-es'
 import { join } from 'path'
 import { homedir } from 'os'
 import { CONFIG_BASE_DIR, CONFIG_FILE } from '../constants/product'
-// Base directory for all Claude Code data files (except config.json for backwards compatibility)
-export const CLAUDE_BASE_DIR =
-  process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), CONFIG_BASE_DIR)
+
+// Base directory for all Cynerza cyner data files (except config.json for backwards compatibility)
+export const CYNERZA_BASE_DIR =
+  process.env.CYNERZA_CONFIG_DIR ?? join(homedir(), CONFIG_BASE_DIR)
+
+export const CLAUDE_BASE_DIR = CYNERZA_BASE_DIR // for backwards compatibility
 
 // Config and data paths
-export const GLOBAL_CLAUDE_FILE = process.env.CLAUDE_CONFIG_DIR
-  ? join(CLAUDE_BASE_DIR, 'config.json')
+export const GLOBAL_CYNERZA_FILE = process.env.CYNERZA_CONFIG_DIR
+  ? join(CYNERZA_BASE_DIR, 'config.json')
   : join(homedir(), CONFIG_FILE)
-export const MEMORY_DIR = join(CLAUDE_BASE_DIR, 'memory')
+
+export const GLOBAL_CLAUDE_FILE = GLOBAL_CYNERZA_FILE // for backwards compatibility
+
+export const MEMORY_DIR = join(CYNERZA_BASE_DIR, 'memory')
 
 const getIsDocker = memoize(async (): Promise<boolean> => {
   // Check for .dockerenv file

@@ -1,5 +1,5 @@
 import { memoize } from 'lodash-es'
-import { API_ERROR_MESSAGE_PREFIX, queryHaiku } from '../services/claude'
+import { API_ERROR_MESSAGE_PREFIX, queryHaiku } from '../services/cynerza'
 import { type ControlOperator, parse, ParseEntry } from 'shell-quote'
 import { PRODUCT_NAME } from '../constants/product'
 

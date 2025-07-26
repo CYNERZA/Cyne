@@ -13,7 +13,7 @@ const __dirname = resolve(
   process.env.NODE_ENV === 'test' ? '../..' : '.',
 )
 
-const d = debug('claude:ripgrep')
+const d = debug('cynerza:ripgrep')
 
 const useBuiltinRipgrep = !!process.env.USE_BUILTIN_RIPGREP
 if (useBuiltinRipgrep) {

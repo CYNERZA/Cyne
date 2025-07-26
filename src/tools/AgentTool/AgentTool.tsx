@@ -1,4 +1,8 @@
-import { TextBlock } from '@anthropic-ai/sdk/resources/index.mjs'
+// Text block type for OpenAI
+type TextBlock = {
+  type: 'text'
+  text: string
+}
 import chalk from 'chalk'
 import { last, memoize } from 'lodash-es'
 import { EOL } from 'os'

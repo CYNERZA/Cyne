@@ -22,8 +22,8 @@ type Props = {
   verbose?: boolean
 }
 
-// Sends a single prompt to the Claude API and returns the response.
-// Assumes that claude is being used non-interactively -- will not
+// Sends a single prompt to the Cynerza API and returns the response.
+// Assumes that cynerza is being used non-interactively -- will not
 // ask the user for permissions or further input.
 export async function ask({
   commands,
@@ -87,7 +87,7 @@ export async function ask({
     )
   }
 
-  // Write log that can be retrieved with `claude log`
+  // Write log that can be retrieved with `cynerza log`
   const messageHistoryFile = getMessagesPath(messageLogName, 0, 0)
   overwriteLog(messageHistoryFile, messages)
 

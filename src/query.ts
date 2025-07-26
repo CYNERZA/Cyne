@@ -1,8 +1,20 @@
-import {
-  Message as APIAssistantMessage,
-  MessageParam,
-  ToolUseBlock,
-} from '@anthropic-ai/sdk/resources/index.mjs'
+// Message types for OpenAI
+type APIAssistantMessage = {
+  role: 'assistant'
+  content: string | any[]
+}
+
+type MessageParam = {
+  role: 'user' | 'assistant' | 'system'
+  content: string | any[]
+}
+
+type ToolUseBlock = {
+  type: 'tool_use'
+  id: string
+  name: string
+  input: any
+}
 import { UUID } from 'crypto'
 import type { Tool, ToolUseContext } from './Tool'
 import {
@@ -13,7 +25,7 @@ import { CanUseToolFn } from './hooks/useCanUseTool'
 import {
   formatSystemPromptWithContext,
   querySonnet,
-} from './services/claude.js'
+} from './services/cynerza.js'
 import { logEvent } from './services/statsig'
 import { all } from './utils/generators'
 import { logError } from './utils/log'
@@ -165,9 +177,19 @@ export async function* query(
 
   yield assistantMessage
 
-  // @see https://docs.anthropic.com/en/docs/build-with-claude/tool-use
+  // @see https://platform.openai.com/docs/guides/function-calling
   // Note: stop_reason === 'tool_use' is unreliable -- it's not always set correctly
-  const toolUseMessages = assistantMessage.message.content.filter(
+  
+  // Safety check for message structure
+  if (!assistantMessage.message || !assistantMessage.message.content) {
+    return
+  }
+  
+  const content = Array.isArray(assistantMessage.message.content) 
+    ? assistantMessage.message.content 
+    : []
+    
+  const toolUseMessages = content.filter(
     _ => _.type === 'tool_use',
   )
 
