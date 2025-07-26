@@ -249,17 +249,28 @@ export function Onboarding({ onDone }: Props): React.ReactNode {
 export function WelcomeBox(): React.ReactNode {
   const theme = getTheme()
   return (
-    <Box
-      borderColor={theme.cynerza}
-      borderStyle="double"
-      paddingX={2}
-      paddingY={1}
-      width={MIN_LOGO_WIDTH}
-    >
-      <Text>
-        <Text color={theme.cynerza} bold>⚡</Text> Welcome to{' '}
-        <Text bold color={theme.cynerza}>{PRODUCT_NAME}</Text> <Text color={theme.cynerza}>research preview!</Text>
-      </Text>
+    <Box flexDirection="column" width={MIN_LOGO_WIDTH}>
+      <Box>
+        <Text color={theme.cynerza}>╭─────────────────────────────────────────────────╮</Text>
+      </Box>
+      <Box paddingLeft={2}>
+        <Text>
+          <Text color={theme.cynerza}>▓▓▓</Text>
+          <Text color={theme.cynerza} bold> CYNERZA CYNER </Text>
+          <Text color={theme.cynerza}>▓▓▓</Text>
+        </Text>
+      </Box>
+      <Box paddingLeft={2}>
+        <Text>
+          <Text color={theme.cynerza} bold>⚡</Text>
+          <Text color={theme.text}> Advanced AI Assistant </Text>
+          <Text color={theme.cynerza} bold>⚡</Text>
+          <Text color={theme.secondaryText}> Research Preview</Text>
+        </Text>
+      </Box>
+      <Box>
+        <Text color={theme.cynerza}>╰─────────────────────────────────────────────────╯</Text>
+      </Box>
     </Box>
   )
 }

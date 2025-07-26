@@ -6,7 +6,7 @@ import { ASCII_LOGO } from '../constants/product'
 export function AsciiLogo(): React.ReactNode {
   const theme = getTheme()
   return (
-    <Box flexDirection="column" alignItems="flex-start" paddingLeft={1}>
+    <Box flexDirection="column" alignItems="flex-start">
       <Text color={theme.cynerza} bold>{ASCII_LOGO}</Text>
     </Box>
   )

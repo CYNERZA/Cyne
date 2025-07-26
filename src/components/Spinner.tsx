@@ -4,18 +4,27 @@ import { useEffect, useRef, useState } from 'react'
 import { getTheme } from '../utils/theme'
 import { sample } from 'lodash-es'
 import { getSessionState } from '../utils/sessionState'
-// Modern tech-focused spinner characters
+// Modern bubble-style spinner characters
 const CHARACTERS =
   process.platform === 'darwin'
-    ? ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-    : ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+    ? ['○', '◔', '◐', '◕', '●', '◕', '◐', '◔']
+    : ['○', '◔', '◐', '◕', '●', '◕', '◐', '◔']
+
+// Alternative bubble patterns for variety
+const BUBBLE_PATTERNS = [
+  ['○', '◉', '○', '◎', '○', '◉', '○'],
+  ['◎', '○', '◉', '○', '◎', '○', '◉'],
+  ['◉', '◎', '○', '◉', '○', '◎', '○'],
+  ['○', '○', '◉', '◎', '◉', '○', '○'],
+  ['◎', '◉', '○', '○', '○', '◉', '◎'],
+]
 
 const MESSAGES = [
-  'Analyzing',
+  'Bubbling',
+  'Cynering',
   'Processing',
   'Computing',
   'Thinking',
-  'Cynering',
   'Optimizing',
   'Synthesizing',
   'Calculating',
@@ -66,6 +75,8 @@ const MESSAGES = [
 export function Spinner(): React.ReactNode {
   const frames = CHARACTERS
   const [frame, setFrame] = useState(0)
+  const [patternFrame, setPatternFrame] = useState(0)
+  const [currentPattern] = useState(() => sample(BUBBLE_PATTERNS) || BUBBLE_PATTERNS[0])
   const [elapsedTime, setElapsedTime] = useState(0)
   const message = useRef(sample(MESSAGES))
   const startTime = useRef(Date.now())
@@ -73,10 +84,11 @@ export function Spinner(): React.ReactNode {
   useEffect(() => {
     const timer = setInterval(() => {
       setFrame(f => (f + 1) % frames.length)
-    }, 80)
+      setPatternFrame(pf => (pf + 1) % currentPattern.length)
+    }, 150) // Slightly slower for bubble effect
 
     return () => clearInterval(timer)
-  }, [frames.length])
+  }, [frames.length, currentPattern.length])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -88,8 +100,10 @@ export function Spinner(): React.ReactNode {
 
   return (
     <Box flexDirection="row" marginTop={1}>
-      <Box flexWrap="nowrap" height={1} width={2}>
-        <Text color={getTheme().cynerza} bold>{frames[frame]}</Text>
+      <Box flexWrap="nowrap" height={1} width={3}>
+        <Text color={getTheme().cynerza} bold>
+          {frames[frame]} {currentPattern[patternFrame]}
+        </Text>
       </Box>
       <Text color={getTheme().cynerza} bold>{message.current}… </Text>
       <Text color={getTheme().secondaryText}>
@@ -105,18 +119,23 @@ export function Spinner(): React.ReactNode {
 export function SimpleSpinner(): React.ReactNode {
   const frames = CHARACTERS
   const [frame, setFrame] = useState(0)
+  const [currentPattern] = useState(() => sample(BUBBLE_PATTERNS) || BUBBLE_PATTERNS[0])
+  const [patternFrame, setPatternFrame] = useState(0)
 
   useEffect(() => {
     const timer = setInterval(() => {
       setFrame(f => (f + 1) % frames.length)
-    }, 80)
+      setPatternFrame(pf => (pf + 1) % currentPattern.length)
+    }, 150)
 
     return () => clearInterval(timer)
-  }, [frames.length])
+  }, [frames.length, currentPattern.length])
 
   return (
-    <Box flexWrap="nowrap" height={1} width={2}>
-      <Text color={getTheme().cynerza} bold>{frames[frame]}</Text>
+    <Box flexWrap="nowrap" height={1} width={3}>
+      <Text color={getTheme().cynerza} bold>
+        {frames[frame]} {currentPattern[patternFrame]}
+      </Text>
     </Box>
   )
 }
