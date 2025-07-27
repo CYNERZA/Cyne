@@ -209,6 +209,7 @@ export function PromptInput(props: PromptInputProps): React.ReactNode {
           verbose,
           slowAndCapableModel: model,
           maxThinkingTokens: 0,
+          dangerouslySkipPermissions: false,
         },
         messageId: undefined,
         abortController,

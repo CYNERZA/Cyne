@@ -42,3 +42,20 @@ export class ToolFactory {
     }
   }
 }
+
+// Tool use context interface for execution environment
+export interface ToolUseContext {
+  abortController: AbortController
+  messageId: string | undefined
+  readFileTimestamps: { [key: string]: number }
+  options: {
+    tools: Tool[]
+    maxThinkingTokens: number
+    dangerouslySkipPermissions?: boolean
+    slowAndCapableModel: string
+    commands: any[]
+    forkNumber: number
+    messageLogName: string
+    verbose: boolean
+  }
+}

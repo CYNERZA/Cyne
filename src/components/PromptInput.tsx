@@ -208,6 +208,7 @@ function PromptInput({
           verbose,
           slowAndCapableModel: model,
           maxThinkingTokens: 0,
+          dangerouslySkipPermissions: false,
         },
         messageId: undefined,
         abortController,

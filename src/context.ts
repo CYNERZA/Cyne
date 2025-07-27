@@ -205,6 +205,7 @@ export const getDirectoryStructure = memoize(
             forkNumber: 0,
             messageLogName: 'unused',
             maxThinkingTokens: 0,
+            dangerouslySkipPermissions: false,
           },
           messageId: undefined,
           readFileTimestamps: {},
