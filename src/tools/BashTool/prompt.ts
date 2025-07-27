@@ -54,29 +54,29 @@ Before executing the command, please follow these steps:
 Usage notes:
   - The command argument is required.
   - You can specify an optional timeout in milliseconds (up to 600000ms / 10 minutes). If not specified, commands will timeout after 30 minutes.
-  - VERY IMPORTANT: You MUST avoid using search commands like \`find\` and \`grep\`. Instead use ${GREP_TOOL_NAME}, ${GLOB_TOOL_NAME}, or ${AGENT_TOOL_NAME} to search. You MUST avoid read tools like \`cat\`, \`head\`, \`tail\`, and \`ls\`, and use ${FileReadTool.name} and ${LSTool.name} to read files.
-  - When issuing multiple commands, use the ';' or '&&' operator to separate them. DO NOT use newlines (newlines are ok in quoted strings).
-  - IMPORTANT: All commands share the same shell session. Shell state (environment variables, virtual environments, current directory, etc.) persist between commands. For example, if you set an environment variable as part of a command, the environment variable will persist for subsequent commands.
-  - Try to maintain your current working directory throughout the session by using absolute paths and avoiding usage of \`cd\`. You may use \`cd\` if the User explicitly requests it.
-  <good-example>
+  - ESSENTIAL: You MUST avoid search operations like \`find\` and \`grep\`. Use specialized tools: ${GREP_TOOL_NAME}, ${GLOB_TOOL_NAME}, or ${AGENT_TOOL_NAME} for searching. You MUST avoid file reading commands like \`cat\`, \`head\`, \`tail\`, and \`ls\` - use ${FileReadTool.name} and ${LSTool.name} instead.
+  - For command sequences, use ';' or '&&' operators. Avoid newlines except within quoted strings.
+  - ESSENTIAL: Commands execute in a persistent shell session. Environment variables, virtual environments, working directory, and other state persist across commands. If you set variables in one command, they remain available for subsequent commands.
+  - Maintain current working directory by using absolute paths rather than \`cd\` commands. Use \`cd\` only when explicitly requested by users.
+  <optimal-approach>
   pytest /foo/bar/tests
-  </good-example>
-  <bad-example>
+  </optimal-approach>
+  <avoid-pattern>
   cd /foo/bar && pytest tests
-  </bad-example>
+  </avoid-pattern>
 
-# Committing changes with git
+# Version Control Operations
 
-When the user asks you to create a new git commit, follow these steps carefully:
+When users request git commits, execute this systematic approach:
 
-1. Start with a single message that contains exactly three tool_use blocks that do the following (it is VERY IMPORTANT that you send these tool_use blocks in a single message, otherwise it will feel slow to the user!):
-   - Run a git status command to see all untracked files.
-   - Run a git diff command to see both staged and unstaged changes that will be committed.
-   - Run a git log command to see recent commit messages, so that you can follow this repository's commit message style.
+1. Execute these three operations in a single message (critical for performance):
+   - Check repository status with git status to identify untracked files
+   - Review changes using git diff to examine both staged and unstaged modifications  
+   - Analyze recent commits with git log to understand the project's commit message conventions
 
-2. Use the git context at the start of this conversation to determine which files are relevant to your commit. Add relevant untracked files to the staging area. Do not commit files that were already modified at the start of this conversation, if they are not relevant to your commit.
+2. Use git context from conversation start to determine relevant files. Stage appropriate untracked files while avoiding unrelated modifications that existed before your work.
 
-3. Analyze all staged changes (both previously staged and newly added) and draft a commit message. Wrap your analysis process in <commit_analysis> tags:
+3. Analyze all staged changes and create an appropriate commit message. Structure your analysis within <commit_analysis> tags:
 
 <commit_analysis>
 - List the files that have been changed or added

@@ -22,20 +22,25 @@ export async function getPrompt(
 ): Promise<string> {
   const tools = await getAgentTools(dangerouslySkipPermissions)
   const toolNames = tools.map(_ => _.name).join(', ')
-  return `Launch a new agent that has access to the following tools: ${toolNames}. When you are searching for a keyword or file and are not confident that you will find the right match on the first try, use the Agent tool to perform the search for you. For example:
+  return `Deploy a specialized agent with access to these tools: ${toolNames}. Use this agent when broad searches or exploratory analysis would be more efficient than direct tool usage.
 
-- If you are searching for a keyword like "config" or "logger", the Agent tool is appropriate
-- If you want to read a specific file path, use the ${FileReadTool.name} or ${GlobTool.name} tool instead of the Agent tool, to find the match more quickly
-- If you are searching for a specific class definition like "class Foo", use the ${GlobTool.name} tool instead, to find the match more quickly
+Optimal agent usage patterns:
+- Searching for concepts, keywords, or patterns where initial attempts might need refinement
+- Exploratory analysis of unfamiliar codebases or documentation
+- Research tasks that benefit from iterative discovery
 
-Usage notes:
-1. Launch multiple agents concurrently whenever possible, to maximize performance; to do that, use a single message with multiple tool uses
-2. When the agent is done, it will return a single message back to you. The result returned by the agent is not visible to the user. To show the user the result, you should send a text message back to the user with a concise summary of the result.
-3. Each agent invocation is stateless. You will not be able to send additional messages to the agent, nor will the agent be able to communicate with you outside of its final report. Therefore, your prompt should contain a highly detailed task description for the agent to perform autonomously and you should specify exactly what information the agent should return back to you in its final and only message to you.
-4. The agent's outputs should generally be trusted${
+Direct tool usage alternatives:
+- Known file paths: use ${FileReadTool.name} or ${GlobTool.name} directly for faster results
+- Specific class/function definitions: ${GlobTool.name} provides immediate pattern matching
+
+Agent capabilities:
+1. Deploy multiple agents simultaneously for parallel processing - include multiple tool invocations in single message blocks for maximum efficiency
+2. Agent responses return to you directly (not visible to users) - summarize findings in your user response  
+3. Agents operate independently per session - provide comprehensive task descriptions with specific output requirements for autonomous execution
+4. Agent results should generally be trusted${
     dangerouslySkipPermissions
       ? ''
       : `
-5. IMPORTANT: The agent can not use ${BashTool.name}, ${FileWriteTool.name}, ${FileEditTool.name}, ${NotebookEditTool.name}, so can not modify files. If you want to use these tools, use them directly instead of going through the agent.`
+5. LIMITATION: This agent cannot access ${BashTool.name}, ${FileWriteTool.name}, ${FileEditTool.name}, ${NotebookEditTool.name} - use these tools directly when file modification is required.`
   }`
 }

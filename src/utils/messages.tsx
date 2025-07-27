@@ -34,13 +34,13 @@ import { UserBashInputMessage } from '../components/messages/UserBashInputMessag
 import { Spinner } from '../components/Spinner'
 import { BashTool } from '../tools/BashTool/BashTool'
 
-export const INTERRUPT_MESSAGE = '[Request interrupted by user]'
+export const INTERRUPT_MESSAGE = '[Session interrupted by user]'
 export const INTERRUPT_MESSAGE_FOR_TOOL_USE =
-  '[Request interrupted by user for tool use]'
+  '[Tool execution cancelled by user]'
 export const CANCEL_MESSAGE =
-  "The user doesn't want to take this action right now. STOP what you are doing and wait for the user to tell you how to proceed."
+  "The user wants to pause this action. Please stop current work and await further instructions."
 export const REJECT_MESSAGE =
-  "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed."
+  "The user declined this tool operation. The requested action was not executed (file modifications were not applied). Please wait for new instructions."
 export const NO_RESPONSE_REQUESTED = 'No response requested.'
 
 export const SYNTHETIC_ASSISTANT_MESSAGES = new Set([
@@ -51,36 +51,44 @@ export const SYNTHETIC_ASSISTANT_MESSAGES = new Set([
   NO_RESPONSE_REQUESTED,
 ])
 
-function baseCreateAssistantMessage(
-  content: ContentBlock[],
-  extra?: Partial<AssistantMessage>,
-): AssistantMessage {
-  return {
-    type: 'assistant',
+// Message factory service with enhanced architecture
+class MessageFactoryService {
+  private static readonly DEFAULT_ASSISTANT_CONFIG = {
+    type: 'assistant' as const,
     costUSD: 0,
     durationMs: 0,
-    uuid: randomUUID(),
-    message: {
-      id: randomUUID(),
-      model: '<synthetic>',
-      role: 'assistant',
-      stop_reason: 'stop_sequence',
-      stop_sequence: '',
-      type: 'message',
-      usage: {
-        input_tokens: 0,
-        output_tokens: 0,
-        cache_creation_input_tokens: 0,
-        cache_read_input_tokens: 0,
-      },
-      content,
+    model: '<synthetic>',
+    role: 'assistant' as const,
+    stop_reason: 'stop_sequence' as const,
+    stop_sequence: '',
+    type_identifier: 'message',
+    usage: {
+      input_tokens: 0,
+      output_tokens: 0,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
     },
-    ...extra,
+  }
+
+  static createAssistantMessage(
+    content: ContentBlock[],
+    overrides?: Partial<AssistantMessage>
+  ): AssistantMessage {
+    return {
+      ...this.DEFAULT_ASSISTANT_CONFIG,
+      uuid: randomUUID(),
+      message: {
+        id: randomUUID(),
+        ...this.DEFAULT_ASSISTANT_CONFIG,
+        content,
+      },
+      ...overrides,
+    }
   }
 }
 
 export function createAssistantMessage(content: string): AssistantMessage {
-  return baseCreateAssistantMessage([
+  return MessageFactoryService.createAssistantMessage([
     {
       type: 'text' as const,
       text: content === '' ? NO_CONTENT_MESSAGE : content,
@@ -92,7 +100,7 @@ export function createAssistantMessage(content: string): AssistantMessage {
 export function createAssistantAPIErrorMessage(
   content: string,
 ): AssistantMessage {
-  return baseCreateAssistantMessage(
+  return MessageFactoryService.createAssistantMessage(
     [
       {
         type: 'text' as const,

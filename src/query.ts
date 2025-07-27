@@ -1,15 +1,15 @@
-// Message types for OpenAI
-type APIAssistantMessage = {
+// Core message interfaces for communication system
+interface AssistantMessageInterface {
   role: 'assistant'
   content: string | any[]
 }
 
-type MessageParam = {
+interface MessageParameterInterface {
   role: 'user' | 'assistant' | 'system'
   content: string | any[]
 }
 
-type ToolUseBlock = {
+interface ToolExecutionBlock {
   type: 'tool_use'
   id: string
   name: string
@@ -44,17 +44,19 @@ import { BashTool } from './tools/BashTool/BashTool'
 import { getCwd } from './utils/state'
 
 export type Response = { costUSD: number; response: string }
-export type UserMessage = {
-  message: MessageParam
+
+// Core message structure definitions
+export interface UserMessage {
+  message: MessageParameterInterface
   type: 'user'
   uuid: UUID
   toolUseResult?: FullToolUseResult
 }
 
-export type AssistantMessage = {
+export interface AssistantMessage {
   costUSD: number
   durationMs: number
-  message: APIAssistantMessage
+  message: AssistantMessageInterface
   type: 'assistant'
   uuid: UUID
   isApiErrorMessage?: boolean
@@ -244,10 +246,10 @@ export async function* query(
   // Sort toolResults to match the order of toolUseMessages
   const orderedToolResults = toolResults.sort((a, b) => {
     const aIndex = toolUseMessages.findIndex(
-      tu => tu.id === (a.message.content[0] as ToolUseBlock).id,
+      tu => tu.id === (a.message.content[0] as ToolExecutionBlock).id,
     )
     const bIndex = toolUseMessages.findIndex(
-      tu => tu.id === (b.message.content[0] as ToolUseBlock).id,
+      tu => tu.id === (b.message.content[0] as ToolExecutionBlock).id,
     )
     return aIndex - bIndex
   })

@@ -89,7 +89,7 @@ export function AssistantTextMessage({
       return (
         <Text>
           &nbsp;&nbsp;⎿ &nbsp;
-          <Text color={getTheme().error}>Interrupted by user</Text>
+          <Text color={getTheme().error}>Session interrupted</Text>
         </Text>
       )
 
@@ -98,7 +98,7 @@ export function AssistantTextMessage({
         <Text>
           &nbsp;&nbsp;⎿ &nbsp;
           <Text color={getTheme().error}>
-            Context low &middot; Run /compact to compact & continue
+            Context limit reached &middot; Use /summary to continue
           </Text>
         </Text>
       )

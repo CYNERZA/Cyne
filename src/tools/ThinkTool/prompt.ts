@@ -1,12 +1,13 @@
 export const DESCRIPTION =
-  'This is a no-op tool that logs a thought. It is inspired by the tau-bench think tool.'
-export const PROMPT = `Use the tool to think about something. It will not obtain new information or make any changes to the repository, but just log the thought. Use it when complex reasoning or brainstorming is needed. 
+  'Cognitive processing tool for structured thinking and problem analysis. Documents reasoning processes for enhanced transparency.'
 
-Common use cases:
-1. When exploring a repository and discovering the source of a bug, call this tool to brainstorm several unique ways of fixing the bug, and assess which change(s) are likely to be simplest and most effective
-2. After receiving test results, use this tool to brainstorm ways to fix failing tests
-3. When planning a complex refactoring, use this tool to outline different approaches and their tradeoffs
-4. When designing a new feature, use this tool to think through architecture decisions and implementation details
-5. When debugging a complex issue, use this tool to organize your thoughts and hypotheses
+export const PROMPT = `Engage this tool for systematic thinking and analysis. It provides a space for organizing thoughts without executing code or making repository changes, serving as a cognitive workspace for complex reasoning.
 
-The tool simply logs your thought process for better transparency and does not execute any code or make changes.`
+Effective applications:
+1. Bug analysis - when identifying issues in repositories, use this tool to explore multiple solution approaches and evaluate their effectiveness and simplicity
+2. Test failure analysis - after receiving test results, organize different fixing strategies and assess their viability  
+3. Architecture planning - when designing complex refactoring, outline various approaches and analyze their trade-offs and implementation complexity
+4. Feature design - during new feature development, think through architectural decisions and detailed implementation considerations
+5. Complex debugging - when investigating intricate issues, structure hypotheses and reasoning chains for systematic problem-solving
+
+This tool creates a transparent log of your analytical process while maintaining focus on the task without executing changes.`

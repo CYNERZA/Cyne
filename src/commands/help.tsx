@@ -2,18 +2,31 @@ import { Command } from '../commands'
 import { Help } from '../components/Help'
 import * as React from 'react'
 
-const help = {
-  type: 'local-jsx',
-  name: 'help',
-  description: 'Show help and available commands',
-  isEnabled: true,
-  isHidden: false,
-  async call(onDone, { options: { commands } }) {
-    return <Help commands={commands} onClose={onDone} />
-  },
-  userFacingName() {
-    return 'help'
-  },
-} satisfies Command
+// Help command implementation with refactored structure
+class HelpCommandHandler {
+  private static readonly CONFIG = {
+    type: 'local-jsx' as const,
+    name: 'help',
+    description: 'Display available commands and usage guidance',
+    isEnabled: true,
+    isHidden: false,
+  }
 
-export default help
+  static createCommand(): Command {
+    return {
+      ...this.CONFIG,
+      call: this.executeCommand,
+      userFacingName: this.getDisplayName,
+    }
+  }
+
+  private static async executeCommand(onDone: (result?: string) => void, { options: { commands } }: any) {
+    return <Help commands={commands} onClose={onDone} />
+  }
+
+  private static getDisplayName(): string {
+    return 'help'
+  }
+}
+
+export default HelpCommandHandler.createCommand()

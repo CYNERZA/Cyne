@@ -50,189 +50,253 @@ interface StreamResponse {
 
 export const MAIN_QUERY_TEMPERATURE = 1
 
-// OpenAI client instance
-let openaiClient: OpenAI | null = null
+/**
+ * AI Client Configuration Manager
+ * Handles OpenAI client lifecycle and connection management
+ */
+class AIClientManager {
+  private static instance: AIClientManager | null = null
+  private openaiClient: OpenAI | null = null
+
+  static getInstance(): AIClientManager {
+    if (!AIClientManager.instance) {
+      AIClientManager.instance = new AIClientManager()
+    }
+    return AIClientManager.instance
+  }
+
+  getClient(): OpenAI {
+    if (this.openaiClient) {
+      return this.openaiClient
+    }
+
+    const config = getGlobalConfig()
+    const apiKey = getOpenAIApiKey()
+
+    if (!apiKey) {
+      throw new Error('OpenAI API key not found')
+    }
+
+    this.openaiClient = new OpenAI({
+      apiKey,
+      baseURL: config.largeModelBaseURL || 'https://api.openai.com/v1',
+    })
+
+    return this.openaiClient
+  }
+
+  resetClient(): void {
+    this.openaiClient = null
+  }
+
+  async validateConnection(): Promise<boolean> {
+    try {
+      const client = this.getClient()
+      await client.models.list()
+      return true
+    } catch (error) {
+      return false
+    }
+  }
+}
 
 /**
- * Get the OpenAI client, creating it if it doesn't exist
+ * Legacy function exports for backward compatibility
  */
 export function getOpenAIClient(): OpenAI {
-  if (openaiClient) {
-    return openaiClient
-  }
-
-  const config = getGlobalConfig()
-  const apiKey = getOpenAIApiKey()
-
-  if (!apiKey) {
-    throw new Error('OpenAI API key not found')
-  }
-
-  openaiClient = new OpenAI({
-    apiKey,
-    baseURL: config.largeModelBaseURL || 'https://api.openai.com/v1',
-  })
-
-  return openaiClient
+  return AIClientManager.getInstance().getClient()
 }
 
-/**
- * Reset the OpenAI client (force recreation on next use)
- */
 export function resetOpenAIClient(): void {
-  openaiClient = null
+  AIClientManager.getInstance().resetClient()
 }
 
-// For backward compatibility with existing code
-
-// Simplified client management
 export const resetOpenAIClientAlias = resetOpenAIClient
 
-/**
- * Verify API key by making a simple request
- */
 export async function verifyApiKey(): Promise<boolean> {
-  try {
-    const client = getOpenAIClient()
-    await client.models.list()
-    return true
-  } catch (error) {
-    return false
-  }
+  return AIClientManager.getInstance().validateConnection()
 }
 
 /**
- * Convert OpenAI message format to internal format
+ * Message Format Transformation Service
+ * Handles conversion between internal and external message formats
  */
-function convertOpenAIToInternalFormat(message: OpenAI.Chat.Completions.ChatCompletionMessage): AssistantMessage {
-  return {
-    uuid: randomUUID(),
-    type: 'assistant',
-    message: {
-      role: 'assistant',
-      content: [
-        {
-          type: 'text',
-          text: message.content || '',
-        },
-      ],
-    },
-    costUSD: 0,
-    durationMs: 0,
+class MessageFormatService {
+  static convertToInternalFormat(message: OpenAI.Chat.Completions.ChatCompletionMessage): AssistantMessage {
+    return {
+      uuid: randomUUID(),
+      type: 'assistant',
+      message: {
+        role: 'assistant',
+        content: [
+          {
+            type: 'text',
+            text: message.content || '',
+          },
+        ],
+      },
+      costUSD: 0,
+      durationMs: 0,
+    }
   }
-}
 
-/**
- * Main query function using OpenAI
- */
-export async function queryOpenAI(
-  messages: (UserMessage | AssistantMessage)[],
-  systemPrompt: string[],
-  maxThinkingTokens: number,
-  tools: Tool[],
-  signal: AbortSignal,
-  options: {
-    dangerouslySkipPermissions: boolean
-    model: string
-    prependCLISysprompt: boolean
-  },
-): Promise<AssistantMessage> {
-  try {
-    const config = getGlobalConfig()
-    const model = options.model || config.largeModelName || 'gpt-4'
-    
-    // Convert messages to OpenAI format
+  static convertMessagesToOpenAI(messages: (UserMessage | AssistantMessage)[]): any[] {
     const openaiMessages: any[] = []
     
     for (const msg of messages) {
       if (msg.type === 'assistant') {
-        const assistantMsg: any = {
-          role: 'assistant',
-          content: null
-        }
-        
-        // Handle assistant content
-        const content = msg.message.content
-        if (typeof content === 'string') {
-          assistantMsg.content = content
-        } else if (Array.isArray(content)) {
-          // Extract text content and tool calls
-          const textContent = content
-            .filter(block => block.type === 'text')
-            .map(block => block.text)
-            .join('\n')
-            .trim()
-          
-          const toolCalls = content
-            .filter(block => block.type === 'tool_use')
-            .map(block => ({
-              id: block.id,
-              type: 'function',
-              function: {
-                name: block.name,
-                arguments: JSON.stringify(block.input)
-              }
-            }))
-          
-          assistantMsg.content = textContent || null
-          if (toolCalls.length > 0) {
-            assistantMsg.tool_calls = toolCalls
-          }
-        }
-        
+        const assistantMsg = this.transformAssistantMessage(msg)
         openaiMessages.push(assistantMsg)
-        
       } else if (msg.type === 'user') {
-        const content = msg.message.content
-        
-        if (typeof content === 'string') {
-          openaiMessages.push({
-            role: 'user',
-            content: content
-          })
-        } else if (Array.isArray(content)) {
-          // Check if this is a tool result message
-          const toolResults = content.filter(block => block.type === 'tool_result')
-          
-          if (toolResults.length > 0) {
-            // Handle tool results
-            for (const toolResult of toolResults) {
-              openaiMessages.push({
-                role: 'tool',
-                content: typeof toolResult.content === 'string' 
-                  ? toolResult.content 
-                  : JSON.stringify(toolResult.content),
-                tool_call_id: toolResult.tool_use_id
-              })
-            }
-          } else {
-            // Regular user message with text content
-            const textContent = content
-              .filter(block => block.type === 'text')
-              .map(block => block.text)
-              .join('\n')
-              .trim()
-            
-            openaiMessages.push({
-              role: 'user',
-              content: textContent || 'user message'
-            })
-          }
-        }
+        const userMessages = this.transformUserMessage(msg)
+        openaiMessages.push(...userMessages)
       }
     }
 
-    // Add system prompt as first message
-    if (systemPrompt.length > 0) {
-      openaiMessages.unshift({
-        role: 'system',
-        content: systemPrompt.join('\n')
-      })
-    }
+    return openaiMessages
+  }
 
-    // Convert tools to OpenAI format with proper cloning
-    const openaiTools = tools.length > 0 ? tools.map(tool => {
-      // Use the inputJSONSchema if available, otherwise convert from Zod schema
+  private static transformAssistantMessage(msg: AssistantMessage): any {
+    const assistantMsg: any = {
+      role: 'assistant',
+      content: null
+    }
+    
+    const content = msg.message.content
+    if (typeof content === 'string') {
+      assistantMsg.content = content
+    } else if (Array.isArray(content)) {
+      const textContent = content
+        .filter(block => block.type === 'text')
+        .map(block => block.text)
+        .join('\n')
+        .trim()
+      
+      const toolCalls = content
+        .filter(block => block.type === 'tool_use')
+        .map(block => ({
+          id: block.id,
+          type: 'function',
+          function: {
+            name: block.name,
+            arguments: JSON.stringify(block.input)
+          }
+        }))
+      
+      assistantMsg.content = textContent || null
+      if (toolCalls.length > 0) {
+        assistantMsg.tool_calls = toolCalls
+      }
+    }
+    
+    return assistantMsg
+  }
+
+  private static transformUserMessage(msg: UserMessage): any[] {
+    const content = msg.message.content
+    
+    if (typeof content === 'string') {
+      return [{
+        role: 'user',
+        content: content
+      }]
+    }
+    
+    if (Array.isArray(content)) {
+      const toolResults = content.filter(block => block.type === 'tool_result')
+      
+      if (toolResults.length > 0) {
+        return toolResults.map(toolResult => ({
+          role: 'tool',
+          content: typeof toolResult.content === 'string' 
+            ? toolResult.content 
+            : JSON.stringify(toolResult.content),
+          tool_call_id: toolResult.tool_use_id
+        }))
+      } else {
+        const textContent = content
+          .filter(block => block.type === 'text')
+          .map(block => block.text)
+          .join('\n')
+          .trim()
+        
+        return [{
+          role: 'user',
+          content: textContent || 'user message'
+        }]
+      }
+    }
+    
+    return []
+  }
+}
+
+/**
+ * AI Query Processing Service
+ * Handles the main AI query execution with OpenAI integration
+ */
+class AIQueryService {
+  private clientManager: AIClientManager
+  private messageService: MessageFormatService
+
+  constructor() {
+    this.clientManager = AIClientManager.getInstance()
+    this.messageService = new MessageFormatService()
+  }
+
+  async executeQuery(
+    messages: (UserMessage | AssistantMessage)[],
+    systemPrompt: string[],
+    maxThinkingTokens: number,
+    tools: Tool[],
+    signal: AbortSignal,
+    options: {
+      dangerouslySkipPermissions: boolean
+      model: string
+      prependCLISysprompt: boolean
+    },
+  ): Promise<AssistantMessage> {
+    try {
+      const config = getGlobalConfig()
+      const model = options.model || config.largeModelName || 'gpt-4'
+      
+      // Convert messages to OpenAI format
+      const openaiMessages = MessageFormatService.convertMessagesToOpenAI(messages)
+
+      // Add system prompt as first message
+      if (systemPrompt.length > 0) {
+        openaiMessages.unshift({
+          role: 'system',
+          content: systemPrompt.join('\n')
+        })
+      }
+
+      // Convert tools to OpenAI format with proper cloning
+      const openaiTools = this.transformToolsForOpenAI(tools)
+
+      const result = await getCompletion(
+        'large',
+        {
+          messages: openaiMessages,
+          model,
+          temperature: MAIN_QUERY_TEMPERATURE,
+          max_tokens: 4096,
+          tools: openaiTools,
+        }
+      )
+
+      return this.processQueryResponse(result)
+
+    } catch (error) {
+      logError(error)
+      return this.createErrorResponse(error)
+    }
+  }
+
+  private transformToolsForOpenAI(tools: Tool[]): any[] | undefined {
+    if (tools.length === 0) return undefined
+    
+    return tools.map(tool => {
       const safeParameters = tool.inputJSONSchema 
         ? JSON.parse(JSON.stringify(tool.inputJSONSchema))
         : zodToJsonSchema(tool.inputSchema)
@@ -245,20 +309,10 @@ export async function queryOpenAI(
           parameters: safeParameters
         }
       }
-    }) : undefined
+    })
+  }
 
-    const result = await getCompletion(
-      'large',
-      {
-        messages: openaiMessages,
-        model,
-        temperature: MAIN_QUERY_TEMPERATURE,
-        max_tokens: 4096,
-        tools: openaiTools,
-      }
-    )
-
-    // Convert the response to our expected format
+  private processQueryResponse(result: any): AssistantMessage {
     let content: any[] = []
     
     if ('choices' in result && result.choices && result.choices[0]) {
@@ -275,38 +329,7 @@ export async function queryOpenAI(
       
       // Extract tool calls and convert to tool_use format
       const toolCalls = choice.message?.tool_calls || []
-      
-      // Deduplicate tool calls based on function name and arguments
-      const seenToolCalls = new Set<string>()
-      
-      for (const toolCall of toolCalls) {
-        let parsedInput: any = {}
-        try {
-          // Try to parse the arguments JSON
-          parsedInput = JSON.parse(toolCall.function.arguments || '{}')
-        } catch (error) {
-          // If parsing fails, use the raw arguments string
-          console.log('Failed to parse tool arguments:', toolCall.function.arguments)
-          parsedInput = { raw_arguments: toolCall.function.arguments }
-        }
-        
-        // Create a unique key for deduplication
-        const toolKey = `${toolCall.function.name}:${JSON.stringify(parsedInput)}`
-        
-        // Skip if we've already seen this exact tool call
-        if (seenToolCalls.has(toolKey)) {
-          continue
-        }
-        seenToolCalls.add(toolKey)
-        
-        const toolUse = {
-          type: 'tool_use',
-          id: toolCall.id,
-          name: toolCall.function.name,
-          input: parsedInput
-        }
-        content.push(toolUse)
-      }
+      content.push(...this.processToolCalls(toolCalls))
       
       // If we have no content at all, add a default message
       if (content.length === 0) {
@@ -332,11 +355,42 @@ export async function queryOpenAI(
       costUSD: 0,
       durationMs: 0
     } as AssistantMessage
+  }
 
-  } catch (error) {
-    logError(error)
+  private processToolCalls(toolCalls: any[]): any[] {
+    const content: any[] = []
+    const seenToolCalls = new Set<string>()
     
-    // Return an error message instead of throwing
+    for (const toolCall of toolCalls) {
+      let parsedInput: any = {}
+      try {
+        parsedInput = JSON.parse(toolCall.function.arguments || '{}')
+      } catch (error) {
+        console.log('Failed to parse tool arguments:', toolCall.function.arguments)
+        parsedInput = { raw_arguments: toolCall.function.arguments }
+      }
+      
+      // Create a unique key for deduplication
+      const toolKey = `${toolCall.function.name}:${JSON.stringify(parsedInput)}`
+      
+      if (seenToolCalls.has(toolKey)) {
+        continue
+      }
+      seenToolCalls.add(toolKey)
+      
+      const toolUse = {
+        type: 'tool_use',
+        id: toolCall.id,
+        name: toolCall.function.name,
+        input: parsedInput
+      }
+      content.push(toolUse)
+    }
+    
+    return content
+  }
+
+  private createErrorResponse(error: any): AssistantMessage {
     return {
       uuid: randomUUID(),
       type: 'assistant',
@@ -353,6 +407,26 @@ export async function queryOpenAI(
       durationMs: 0
     } as AssistantMessage
   }
+}
+
+/**
+ * Main query function exports for backward compatibility
+ */
+const aiQueryService = new AIQueryService()
+
+export async function queryOpenAI(
+  messages: (UserMessage | AssistantMessage)[],
+  systemPrompt: string[],
+  maxThinkingTokens: number,
+  tools: Tool[],
+  signal: AbortSignal,
+  options: {
+    dangerouslySkipPermissions: boolean
+    model: string
+    prependCLISysprompt: boolean
+  },
+): Promise<AssistantMessage> {
+  return aiQueryService.executeQuery(messages, systemPrompt, maxThinkingTokens, tools, signal, options)
 }
 
 /**

@@ -56,9 +56,9 @@ type Props = {
   readFileTimestamps: { [filename: string]: number }
 }
 
-function getPastedTextPrompt(text: string): string {
-  const newlineCount = (text.match(/\r\n|\r|\n/g) || []).length
-  return `[Pasted text +${newlineCount} lines] `
+function createPastedContentIndicator(text: string): string {
+  const lineCount = (text.match(/\r\n|\r|\n/g) || []).length
+  return `[Content: ${lineCount} lines] `
 }
 function PromptInput({
   commands,
@@ -179,7 +179,7 @@ function PromptInput({
     let finalInput = input
     if (pastedText) {
       // Create the prompt pattern that would have been used for this pasted text
-      const pastedPrompt = getPastedTextPrompt(pastedText)
+              const pastedPrompt = createPastedContentIndicator(pastedText)
       if (finalInput.includes(pastedPrompt)) {
         finalInput = finalInput.replace(pastedPrompt, pastedText)
       } // otherwise, ignore the pastedText if the user has modified the prompt
@@ -245,7 +245,7 @@ function PromptInput({
     const text = rawText.replace(/\r/g, '\n')
 
     // Get prompt with newline count
-    const pastedPrompt = getPastedTextPrompt(text)
+    const pastedPrompt = createPastedContentIndicator(text)
 
     // Update the input with a visual indicator that text has been pasted
     const newInput =
@@ -343,9 +343,9 @@ function PromptInput({
                   color={mode === 'bash' ? theme.bashBorder : undefined}
                   dimColor={mode !== 'bash'}
                 >
-                  ! for bash mode
+                  ! for terminal mode
                 </Text>
-                <Text dimColor>· / for commands · esc to undo</Text>
+                <Text dimColor>· / for commands · esc for options</Text>
               </>
             )}
           </Box>

@@ -1,6 +1,6 @@
 {
   "name": "cyne",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "bin": {
     "cyne": "cli.mjs",
     "cyne.cmd": "cyne.cmd"
