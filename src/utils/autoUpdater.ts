@@ -10,7 +10,8 @@ import {
   unlinkSync,
   statSync,
 } from 'fs'
-import { platform } from 'process'
+import { platform as platformFunc } from 'os'
+import { WindowsPathManager } from './windowsPath'
 import { execFileNoThrow } from './execFileNoThrow'
 import { logError } from './log'
 import { accessSync } from 'fs'
@@ -195,16 +196,32 @@ export async function setupNewPrefix(prefix: string): Promise<void> {
     // Update shell config files
     const pathUpdate = `\n# npm global path\nexport PATH="${prefix}/bin:$PATH"\n`
 
-    if (platform === 'win32') {
-      // On Windows, update user PATH environment variable
-      const setxResult = await execFileNoThrow('setx', [
-        'PATH',
-        `${process.env.PATH};${prefix}`,
-      ])
-      if (setxResult.code !== 0) {
-        throw new Error(
-          `Failed to update PATH on Windows: ${setxResult.stderr}`,
-        )
+    if (platformFunc() === 'win32') {
+      // On Windows, update user PATH environment variable using our improved Windows PATH manager
+      try {
+        await WindowsPathManager.addToPath(prefix, false)
+        logEvent('tengu_auto_updater_windows_path_updated', {
+          prefix,
+          currentVersion: MACRO.VERSION,
+        })
+      } catch (error) {
+        logError(`Failed to update Windows PATH using WindowsPathManager: ${error}`)
+        
+        // Fallback to setx command
+        try {
+          const setxResult = await execFileNoThrow('setx', [
+            'PATH',
+            `${process.env.PATH};${prefix}`,
+          ])
+          if (setxResult.code !== 0) {
+            throw new Error(
+              `Failed to update PATH on Windows: ${setxResult.stderr}`,
+            )
+          }
+        } catch (setxError) {
+          logError(`Setx fallback also failed: ${setxError}`)
+          throw new Error(`Failed to update Windows PATH: ${error}`)
+        }
       }
     } else {
       // Unix-like systems
@@ -263,7 +280,7 @@ export function getPermissionsCommand(npmPrefix: string): string {
   const prefixPath = npmPrefix || '$(npm -g config get prefix)'
   const unixCommand = `sudo chown -R $USER:$(id -gn) ${prefixPath} && sudo chmod -R u+w ${prefixPath}`
 
-  return platform === 'win32' ? windowsCommand : unixCommand
+  return platformFunc() === 'win32' ? windowsCommand : unixCommand
 }
 
 export async function getLatestVersion(): Promise<string | null> {
@@ -272,7 +289,7 @@ export async function getLatestVersion(): Promise<string | null> {
 
   const result = await execFileNoThrow(
     'npm',
-    ['view', MACRO.PACKAGE_URL, 'version'],
+    ['view', 'cyne', 'version'],
     abortController.signal,
   )
   if (result.code !== 0) {
@@ -301,7 +318,7 @@ export async function installGlobalPackage(): Promise<InstallStatus> {
     const installResult = await execFileNoThrow('npm', [
       'install',
       '-g',
-      MACRO.PACKAGE_URL,
+      'cyne',
     ])
     if (installResult.code !== 0) {
       logError(

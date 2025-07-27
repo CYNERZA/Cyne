@@ -17,7 +17,8 @@ import pr_comments from './commands/pr_comments'
 import releaseNotes from './commands/release-notes'
 import review from './commands/review'
 import terminalSetup from './commands/terminalSetup'
-import { Tool, ToolUseContext } from './Tool'
+import { windowsInstaller, windowsUninstaller } from './commands/windowsInstaller'
+import { Tool } from './Tool'
 import resume from './commands/resume'
 import { getMCPCommands } from './services/mcpClient'
 import { memoize } from 'lodash-es'
@@ -95,6 +96,8 @@ const COMMANDS = memoize((): Command[] => [
   bug,
   review,
   terminalSetup,
+  windowsInstaller,
+  windowsUninstaller,
   ...(isOpenAIAuthEnabled() ? [logout, login()] : []),
   ...INTERNAL_ONLY_COMMANDS,
 ])

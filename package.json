@@ -1,8 +1,9 @@
 {
   "name": "cyne",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "bin": {
-    "cyne": "cli.mjs"
+    "cyne": "cli.mjs",
+    "cyne.cmd": "cyne.cmd"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -21,11 +22,17 @@
   },
   "files": [
     "cli.mjs",
-    "yoga.wasm"
+    "cyne.cmd",
+    "yoga.wasm",
+    "scripts/install-windows.ps1",
+    "scripts/uninstall-windows.ps1"
   ],
   "scripts": {
     "dev": "tsx ./src/entrypoints/cli.tsx --verbose",
     "build": "bun build src/entrypoints/cli.tsx --minify --outfile cli.mjs --target=node",
+    "build:windows": "npm run build && copy cyne.cmd dist\\ && copy scripts\\*.ps1 dist\\scripts\\",
+    "install-windows": "powershell -ExecutionPolicy Bypass -File scripts/install-windows.ps1",
+    "uninstall-windows": "powershell -ExecutionPolicy Bypass -File scripts/uninstall-windows.ps1",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json}\""
   },
