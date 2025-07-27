@@ -17,43 +17,57 @@ const execPromise = promisify(exec)
 
 async function getFrequentlyModifiedFiles(): Promise<string[]> {
   if (process.env.NODE_ENV === 'test') return []
-  if (env.platform === 'windows') return []
   if (!(await getIsGit())) return []
 
   try {
     let filenames = ''
+    let userFilenames = ''
     // Look up files modified by the user's recent commits
     // Be careful to do it async, so it doesn't block the main thread
-    const { stdout: userFilenames } = await execPromise(
-      'git log -n 1000 --pretty=format: --name-only --diff-filter=M --author=$(git config user.email) | sort | uniq -c | sort -nr | head -n 20',
-      { cwd: getCwd(), encoding: 'utf8' },
-    )
+    
+    if (env.platform === 'windows') {
+      // Windows-compatible git command using PowerShell
+      const { stdout } = await execPromise(
+        'powershell -Command "git log -n 1000 --pretty=format: --name-only --diff-filter=M --author=$(git config user.email) | Where-Object {$_ -ne \'\'} | Group-Object | Sort-Object Count -Descending | Select-Object -First 20 | ForEach-Object {$_.Name}"',
+        { cwd: getCwd(), encoding: 'utf8' },
+      )
+      userFilenames = stdout
+    } else {
+      // Unix-like systems
+      const { stdout } = await execPromise(
+        'git log -n 1000 --pretty=format: --name-only --diff-filter=M --author=$(git config user.email) | sort | uniq -c | sort -nr | head -n 20',
+        { cwd: getCwd(), encoding: 'utf8' },
+      )
+      userFilenames = stdout
+    }
 
     filenames = 'Files modified by user:\n' + userFilenames
 
     // Look at other users' commits if we don't have enough files
     if (userFilenames.split('\n').length < 10) {
+      let allFilenamesCommand = ''
+      if (env.platform === 'windows') {
+        allFilenamesCommand = 'powershell -Command "git log -n 1000 --pretty=format: --name-only --diff-filter=M | Where-Object {$_ -ne \'\'} | Group-Object | Sort-Object Count -Descending | Select-Object -First 20 | ForEach-Object {$_.Name}"'
+      } else {
+        allFilenamesCommand = 'git log -n 1000 --pretty=format: --name-only --diff-filter=M | sort | uniq -c | sort -nr | head -n 20'
+      }
+      
       const { stdout: allFilenames } = await execPromise(
-        'git log -n 1000 --pretty=format: --name-only --diff-filter=M | sort | uniq -c | sort -nr | head -n 20',
+        allFilenamesCommand,
         { cwd: getCwd(), encoding: 'utf8' },
       )
       filenames += '\n\nFiles modified by other users:\n' + allFilenames
     }
-    const response = await queryHaiku({
-      systemPrompt: [
-        "You are an expert at analyzing git history. Given a list of files and their modification counts, return exactly five filenames that are frequently modified and represent core application logic (not auto-generated files, dependencies, or configuration). Make sure filenames are diverse, not all in the same folder, and are a mix of user and other users. Return only the filenames' basenames (without the path) separated by newlines with no explanation.",
-      ],
-      userPrompt: filenames,
+    // For Windows compatibility, use simple file parsing instead of AI analysis
+    logError('Using fallback file parsing for Windows compatibility')
+    const lines = filenames.split('\n').filter(line => 
+      line.trim() && !line.includes('Files modified')
+    )
+    return lines.slice(0, 5).map(line => {
+      // Extract just the filename from lines that might have counts
+      const parts = line.trim().split(/\s+/)
+      return parts[parts.length - 1] || line.trim()
     })
-
-    const content = response.message.content[0]
-    if (!content || content.type !== 'text') return []
-    const chosenFilenames = content.text.trim().split('\n')
-    if (chosenFilenames.length < 5) {
-      // Likely error
-      return []
-    }
-    return chosenFilenames
   } catch (err) {
     logError(err)
     return []

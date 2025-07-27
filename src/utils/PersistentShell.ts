@@ -23,7 +23,9 @@ type QueuedCommand = {
   reject: (error: Error) => void
 }
 
-const TEMPFILE_PREFIX = os.tmpdir() + `/${PRODUCT_COMMAND}-`
+const TEMPFILE_PREFIX = process.platform === 'win32' 
+  ? os.tmpdir() + `\\${PRODUCT_COMMAND}-`
+  : os.tmpdir() + `/${PRODUCT_COMMAND}-`
 const DEFAULT_TIMEOUT = 30 * 60 * 1000
 const SIGTERM_CODE = 143 // Standard exit code for SIGTERM
 const FILE_SUFFIXES = {
@@ -51,15 +53,29 @@ export class PersistentShell {
   private binShell: string
 
   constructor(cwd: string) {
-    this.binShell = process.env.SHELL || '/bin/bash'
-    this.shell = spawn(this.binShell, ['-l'], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      cwd,
-      env: {
-        ...process.env,
-        GIT_EDITOR: 'true',
-      },
-    })
+    // On Windows, use PowerShell; on Unix-like systems, use bash/zsh
+    if (process.platform === 'win32') {
+      this.binShell = 'powershell.exe'
+      this.shell = spawn(this.binShell, ['-NoProfile', '-Command', '-'], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        cwd,
+        env: {
+          ...process.env,
+          GIT_EDITOR: 'true',
+        },
+        shell: false
+      })
+    } else {
+      this.binShell = process.env.SHELL || '/bin/bash'
+      this.shell = spawn(this.binShell, ['-l'], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        cwd,
+        env: {
+          ...process.env,
+          GIT_EDITOR: 'true',
+        },
+      })
+    }
 
     this.cwd = cwd
 
@@ -98,11 +114,15 @@ export class PersistentShell {
     }
     // Initialize CWD file with initial directory
     fs.writeFileSync(this.cwdFile, cwd)
-    const configFile = SHELL_CONFIGS[this.binShell]
-    if (configFile) {
-      const configFilePath = join(homedir(), configFile)
-      if (existsSync(configFilePath)) {
-        this.sendToShell(`source ${configFilePath}`)
+    
+    // Only load shell configs on Unix-like systems
+    if (process.platform !== 'win32') {
+      const configFile = SHELL_CONFIGS[this.binShell]
+      if (configFile) {
+        const configFilePath = join(homedir(), configFile)
+        if (existsSync(configFilePath)) {
+          this.sendToShell(`source ${configFilePath}`)
+        }
       }
     }
   }
@@ -231,24 +251,27 @@ export class PersistentShell {
     const quotedCommand = shellquote.quote([command])
 
     // Check the syntax of the command
-    try {
-      execSync(`${this.binShell} -n -c ${quotedCommand}`, {
-        stdio: 'ignore',
-        timeout: 1000,
-      })
-    } catch (stderr) {
-      // If there's a syntax error, return an error and log it
-      const errorStr =
-        typeof stderr === 'string' ? stderr : String(stderr || '')
-      logEvent('persistent_shell_syntax_error', {
-        error: errorStr.substring(0, 10),
-      })
-      return Promise.resolve({
-        stdout: '',
-        stderr: errorStr,
-        code: 128,
-        interrupted: false,
-      })
+    if (process.platform !== 'win32') {
+      // Only do syntax checking on Unix-like systems
+      try {
+        execSync(`${this.binShell} -n -c ${quotedCommand}`, {
+          stdio: 'ignore',
+          timeout: 1000,
+        })
+      } catch (stderr) {
+        // If there's a syntax error, return an error and log it
+        const errorStr =
+          typeof stderr === 'string' ? stderr : String(stderr || '')
+        logEvent('persistent_shell_syntax_error', {
+          error: errorStr.substring(0, 10),
+        })
+        return Promise.resolve({
+          stdout: '',
+          stderr: errorStr,
+          code: 128,
+          interrupted: false,
+        })
+      }
     }
 
     const commandTimeout = timeout || DEFAULT_TIMEOUT
@@ -259,25 +282,46 @@ export class PersistentShell {
       fs.writeFileSync(this.stdoutFile, '')
       fs.writeFileSync(this.stderrFile, '')
       fs.writeFileSync(this.statusFile, '')
-      // Break up the command sequence for clarity using an array of commands
-      const commandParts = []
 
-      // 1. Execute the main command with redirections
-      commandParts.push(
-        `eval ${quotedCommand} < /dev/null > ${this.stdoutFile} 2> ${this.stderrFile}`,
-      )
+      if (process.platform === 'win32') {
+        // Windows PowerShell command execution
+        const escapedCommand = command.replace(/"/g, '""') // Escape quotes for PowerShell
+        
+        const powershellScript = `
+          try {
+            $ErrorActionPreference = "Continue"
+            $output = & cmd /c "${escapedCommand}" 2>&1
+            $exitCode = $LASTEXITCODE
+            if ($output) { $output | Out-File -FilePath "${this.stdoutFile.replace(/\\/g, '\\\\')}" -Encoding UTF8 }
+            Get-Location | Select-Object -ExpandProperty Path | Out-File -FilePath "${this.cwdFile.replace(/\\/g, '\\\\')}" -Encoding UTF8
+            $exitCode | Out-File -FilePath "${this.statusFile.replace(/\\/g, '\\\\')}" -Encoding UTF8
+          } catch {
+            $_.Exception.Message | Out-File -FilePath "${this.stderrFile.replace(/\\/g, '\\\\')}" -Encoding UTF8
+            "1" | Out-File -FilePath "${this.statusFile.replace(/\\/g, '\\\\')}" -Encoding UTF8
+          }
+        `
+        this.sendToShell(powershellScript)
+      } else {
+        // Unix-like command execution (existing logic)
+        const commandParts = []
 
-      // 2. Capture exit code immediately after command execution to avoid losing it
-      commandParts.push(`EXEC_EXIT_CODE=$?`)
+        // 1. Execute the main command with redirections
+        commandParts.push(
+          `eval ${quotedCommand} < /dev/null > ${this.stdoutFile} 2> ${this.stderrFile}`,
+        )
 
-      // 3. Update CWD file
-      commandParts.push(`pwd > ${this.cwdFile}`)
+        // 2. Capture exit code immediately after command execution to avoid losing it
+        commandParts.push(`EXEC_EXIT_CODE=$?`)
 
-      // 4. Write the preserved exit code to status file to avoid race with pwd
-      commandParts.push(`echo $EXEC_EXIT_CODE > ${this.statusFile}`)
+        // 3. Update CWD file
+        commandParts.push(`pwd > ${this.cwdFile}`)
 
-      // Send the combined commands as a single operation to maintain atomicity
-      this.sendToShell(commandParts.join('\n'))
+        // 4. Write the preserved exit code to status file to avoid race with pwd
+        commandParts.push(`echo $EXEC_EXIT_CODE > ${this.statusFile}`)
+
+        // Send the combined commands as a single operation to maintain atomicity
+        this.sendToShell(commandParts.join('\n'))
+      }
 
       // Check for command completion or timeout
       const start = Date.now()
@@ -363,7 +407,12 @@ export class PersistentShell {
     if (!existsSync(resolved)) {
       throw new Error(`Path "${resolved}" does not exist`)
     }
-    await this.exec(`cd ${resolved}`)
+    
+    if (process.platform === 'win32') {
+      await this.exec(`cd /d "${resolved}"`)
+    } else {
+      await this.exec(`cd ${resolved}`)
+    }
   }
 
   close(): void {
