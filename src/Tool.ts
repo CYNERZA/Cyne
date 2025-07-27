@@ -1,24 +1,38 @@
 import { z } from 'zod'
+import React from 'react'
 
-// Abstract base interface for tool execution
-export interface ToolExecutionInterface {
+// Validation result interface
+export interface ValidationResult {
+  result: boolean
+  message: string
+  meta?: any
+}
+
+// Tool interface that matches actual tool implementations
+export interface Tool<TInput = any, TOutput = any> {
   name: string
-  description?: string
+  description?: string | (() => Promise<string>)
   inputSchema: z.ZodObject<any>
   inputJSONSchema?: Record<string, unknown>
-}
-
-// Enhanced tool capabilities interface
-export interface ToolCapabilities {
+  
+  // Tool lifecycle methods
   isReadOnly: () => boolean
   isEnabled: () => Promise<boolean>
-  getPromptConfiguration: (options: { dangerouslySkipPermissions: boolean }) => Promise<string>
-}
-
-// Composite tool interface combining execution and capabilities
-export interface Tool extends ToolExecutionInterface, ToolCapabilities {
-  // Legacy compatibility wrapper for existing prompt method
-  prompt: (options: { dangerouslySkipPermissions: boolean }) => Promise<string>
+  needsPermissions?: (input: TInput) => boolean
+  validateInput?: (input: TInput) => Promise<ValidationResult>
+  
+  // User-facing methods
+  userFacingName: (input?: TInput) => string
+  prompt: (options?: { dangerouslySkipPermissions?: boolean }) => Promise<string>
+  
+  // Tool execution
+  call?: (input: TInput, context: ToolUseContext) => AsyncGenerator<any, any, any>
+  
+  // Rendering methods
+  renderResultForAssistant: (data: TOutput) => string
+  renderToolUseMessage: (input: TInput, options: { verbose: boolean }) => string
+  renderToolUseRejectedMessage: (input?: TInput, options?: { columns?: number; verbose?: boolean }) => React.ReactNode
+  renderToolResultMessage?: (data: TOutput, options: { verbose: boolean }) => React.ReactNode
 }
 
 // Tool factory helper for creating tools with standardized patterns
@@ -27,9 +41,10 @@ export class ToolFactory {
     name: string
     description?: string
     inputSchema: z.ZodObject<any>
-    promptGenerator: (options: { dangerouslySkipPermissions: boolean }) => Promise<string>
+    promptGenerator: (options?: { dangerouslySkipPermissions?: boolean }) => Promise<string>
     readOnlyMode?: boolean
     enabledCheck?: () => Promise<boolean>
+    userFacingName?: string
   }): Tool {
     return {
       name: config.name,
@@ -37,8 +52,11 @@ export class ToolFactory {
       inputSchema: config.inputSchema,
       isReadOnly: () => config.readOnlyMode ?? false,
       isEnabled: config.enabledCheck ?? (() => Promise.resolve(true)),
-      getPromptConfiguration: config.promptGenerator,
-      prompt: config.promptGenerator, // Legacy compatibility
+      userFacingName: () => config.userFacingName ?? config.name,
+      prompt: config.promptGenerator,
+      renderResultForAssistant: (data) => String(data),
+      renderToolUseMessage: () => '',
+      renderToolUseRejectedMessage: () => React.createElement('div', {}, 'Tool use rejected'),
     }
   }
 }

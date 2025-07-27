@@ -17,6 +17,7 @@ import BashToolResultMessage from './BashToolResultMessage'
 import { BANNED_COMMANDS, PROMPT } from './prompt'
 import { formatOutput, getCommandFilePaths } from './utils'
 import { logEvent } from '../../services/statsig'
+import { randomUUID } from 'crypto'
 
 export const inputSchema = z.strictObject({
   command: z.string().describe('The command to execute'),
@@ -37,35 +38,29 @@ export type Out = {
 
 export const BashTool = {
   name: 'Bash',
-  async description({ command }) {
-    try {
-      const result = await queryHaiku({
-        systemPrompt: [
-          `You are a command description generator. Write a clear, concise description of what this command does in 5-10 words. Examples:
-
-          Input: ls
-          Output: Lists files in current directory
-
-          Input: git status
-          Output: Shows working tree status
-
-          Input: npm install
-          Output: Installs package dependencies
-
-          Input: mkdir foo
-          Output: Creates directory 'foo'`,
-        ],
-        userPrompt: `Describe this command: ${command}`,
-      })
-      const description =
-        result.message.content[0]?.type === 'text'
-          ? result.message.content[0].text
-          : null
-      return description || 'Executes a bash command'
-    } catch (error) {
-      logError(error)
+  async description(input?: { command?: string }) {
+    if (!input || !input.command) {
       return 'Executes a bash command'
     }
+    
+    // For now, return a simple description to avoid the model access issue
+    const command = input.command.trim()
+    
+    // Simple command description mapping
+    if (command.startsWith('ls')) return 'Lists files and directories'
+    if (command.startsWith('cd')) return 'Changes current directory'
+    if (command.startsWith('git status')) return 'Shows git repository status'
+    if (command.startsWith('git')) return 'Executes git version control command'
+    if (command.startsWith('npm')) return 'Executes npm package manager command'
+    if (command.startsWith('mkdir')) return 'Creates directory'
+    if (command.startsWith('rm')) return 'Removes files or directories'
+    if (command.startsWith('cp')) return 'Copies files or directories'
+    if (command.startsWith('mv')) return 'Moves or renames files'
+    if (command.startsWith('cat')) return 'Displays file content'
+    if (command.startsWith('echo')) return 'Prints text to output'
+    if (command.startsWith('pwd')) return 'Shows current directory path'
+    
+    return `Executes bash command: ${command}`
   },
   async prompt() {
     const config = getGlobalConfig()
@@ -121,7 +116,7 @@ export const BashTool = {
       }
     }
 
-    return { result: true }
+    return { result: true, message: 'Command is valid' }
   },
   renderToolUseMessage({ command }) {
     // Clean up any command that uses the quoted HEREDOC pattern
@@ -220,4 +215,4 @@ export const BashTool = {
       data,
     }
   },
-} satisfies Tool<In, Out>
+} satisfies Tool
