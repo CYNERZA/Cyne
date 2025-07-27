@@ -310,7 +310,7 @@ export function REPL({
   ) {
     setMessages(oldMessages => [...oldMessages, ...newMessages])
 
-    // Mark onboarding as complete when any user message is sent to Cynerza
+    // Mark onboarding as complete when any user message is sent to Cyne
     markProjectOnboardingComplete()
 
     // The last message is an assistant message if the user input was a bash command,

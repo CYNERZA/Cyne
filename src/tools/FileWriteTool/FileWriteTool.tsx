@@ -212,9 +212,9 @@ export const FileWriteTool = {
     // Update read timestamp, to invalidate stale writes
     readFileTimestamps[fullFilePath] = statSync(fullFilePath).mtimeMs
 
-    // Log when writing to CYNERZA.md
+    // Log when writing to CYNE.md
     if (fullFilePath.endsWith(`${sep}${PROJECT_FILE}`)) {
-      logEvent('tengu_write_cynerzamd', {})
+      logEvent('tengu_write_cyne', {})
     }
 
     if (oldContent) {

@@ -4,12 +4,12 @@ import { join } from 'path'
 import { homedir } from 'os'
 import { CONFIG_BASE_DIR, CONFIG_FILE } from '../constants/product'
 
-// Base directory for all Cynerza cyner data files (except config.json for backwards compatibility)
+// Base directory for all Cyne data files (except config.json for backwards compatibility)
 export const CYNERZA_BASE_DIR =
-  process.env.CYNERZA_CONFIG_DIR ?? join(homedir(), CONFIG_BASE_DIR)
+  process.env.CYNE_CONFIG_DIR ?? join(homedir(), CONFIG_BASE_DIR)
 
 // Config and data paths
-export const GLOBAL_CYNERZA_FILE = process.env.CYNERZA_CONFIG_DIR
+export const GLOBAL_CYNERZA_FILE = process.env.CYNE_CONFIG_DIR
   ? join(CYNERZA_BASE_DIR, 'config.json')
   : join(homedir(), CONFIG_FILE)
 

@@ -1,23 +1,23 @@
 {
-  "name": "cynerza-cyner",
+  "name": "cyne",
   "version": "0.0.1",
   "bin": {
-    "cyner": "cli.mjs"
+    "cyne": "cli.mjs"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "type": "module",
-  "author": "Cynerza's cyner <hello@cynerza.com>",
+  "author": "Cynerza's cyne <hello@cynerza.com>",
   "license": "",
-  "description": "Use Cynerza's cyner, Cynerza's AI assistant, right from your terminal. Cynerza's cyner can understand your codebase, edit files, run terminal commands, and handle entire workflows for you.",
-  "homepage": "https://github.com/CYNERZA/cynerza-cyner",
+  "description": "Use Cyne, Cynerza's AI assistant, right from your terminal. Cyne can understand your codebase, edit files, run terminal commands, and handle entire workflows for you.",
+  "homepage": "https://github.com/CYNERZA/cyne",
   "repository": {
     "type": "git",
-    "url": "https://github.com/CYNERZA/cynerza-cyner.git"
+    "url": "https://github.com/CYNERZA/cyne.git"
   },
   "bugs": {
-    "url": "https://github.com/CYNERZA/cynerza-cyner/issues"
+    "url": "https://github.com/CYNERZA/cyne/issues"
   },
   "files": [
     "cli.mjs",

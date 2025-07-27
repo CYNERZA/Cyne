@@ -39,7 +39,7 @@ const BUBBLE_PATTERNS = [
 
 const MESSAGES = [
   'Bubbling',
-  'Cynering',
+  'Cyneing',
   'Processing',
   'Computing',
   'Thinking',

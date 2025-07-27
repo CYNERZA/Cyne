@@ -1,46 +1,99 @@
-# CYNERZA'S CYNER
+# CYNE
 
-Terminal-based AI coding tool that can use any model that supports the OpenAI-style API.
+<p align="center">
+  <img src="https://github.com/CYNERZA/cyne/assets/1/f81b1f2b-3f29-4c4b-854c-47a38bca7256" alt="CYNE Logo" width="200"/>
+</p>
 
-- Fixes your spaghetti code
-- Explains wtf that function does
-- Runs tests, shell commands and stuff
-- Whatever else AI coding assistants can do, depending on the model you use
+<p align="center">
+  <strong>A terminal-based AI coding assistant that helps you write, understand, and improve your code.</strong>
+</p>
 
-## HOW TO USE
+<p align="center">
+  <a href="https://github.com/CYNERZA/cyne/actions/workflows/build.yml">
+    <img src="https://github.com/CYNERZA/cyne/actions/workflows/build.yml/badge.svg" alt="Build Status">
+  </a>
+  <a href="https://www.npmjs.com/package/cyne">
+    <img src="https://img.shields.io/npm/v/cyne.svg" alt="NPM Version">
+  </a>
+  <a href="https://github.com/CYNERZA/cyne/blob/main/LICENSE.md">
+    <img src="https://img.shields.io/npm/l/cyne.svg" alt="License">
+  </a>
+</p>
 
+## Features
+
+- **Code Comprehension:** Understand complex code with natural language explanations.
+- **Code Generation:** Generate new code or modify existing files with simple prompts.
+- **Test Generation:** Automatically create unit tests for your codebase.
+- **Shell Command Execution:** Run shell commands and scripts directly from the assistant.
+- **Extensibility:** Compatible with any model that supports the OpenAI-style API.
+- **Interactive Environment:** A REPL-like interface for a seamless workflow.
+
+## Getting Started
+
+### Installation
+
+To install CYNE globally, use the following command:
+
+```bash
+npm install -g cyne
 ```
-npm install -g cynerza-cyner
+
+### Usage
+
+Navigate to your project directory and run CYNE:
+
+```bash
 cd your-project
-cyner
+cyne
 ```
 
-You can use the onboarding to set up the model, or `/model`.
-If you don't see the models you want on the list, you can manually set them in `/config`
-As long as you have an openai-like endpoint, it should work.
+## Commands
 
-## HOW TO DEV
+CYNE supports a variety of slash commands to enhance your workflow:
+
+- `/model`: Select the model you want to use.
+- `/config`: Configure the tool to your preferences.
+- `/bug`: Report a bug or issue.
+- `/help`: Get help with using the tool.
+
+## Examples
+
+### Explaining a function
 
 ```
-pnpm i
-pnpm run dev
-pnpm run build
+/explain "my_function" in my_file.js
 ```
 
-Get some more logs while debugging:
+### Generating a new component
+
 ```
-NODE_ENV=development pnpm run dev --verbose --debug
+/new "MyComponent" in src/components
 ```
 
-## BUGS
+### Running tests
 
-You can submit a bug from within the app with `/bug`, it will open a browser to github issue create with stuff filed out.
+```
+/run_tests
+```
 
-## Warning
+## Troubleshooting
 
-Use at own risk.
+If you encounter any issues, try the following:
 
+- Ensure you have a stable internet connection.
+- Verify that your API keys are correctly configured.
+- Check the CYNE documentation for updates and solutions.
 
-## YOUR DATA
+## Contributing
 
-- There's no telemetry or backend servers other than the AI providers you choose
+We welcome contributions from the community. If you would like to contribute, please:
+
+1.  Fork the repository.
+2.  Create a new branch for your feature or bug fix.
+3.  Commit your changes and open a pull request.
+4.  Ensure your code follows the project's coding standards.
+
+## License
+
+CYNE is licensed under the MIT License. See the [LICENSE.md](LICENSE.md) file for more details.
