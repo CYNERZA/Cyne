@@ -14,7 +14,6 @@ import { join } from 'path'
 import { getCwd } from '../utils/state'
 import { safeParseJSON } from '../utils/json'
 
-// Define our own types instead of Anthropic types
 type ImageBlockParam = {
   type: 'image'
   source: {

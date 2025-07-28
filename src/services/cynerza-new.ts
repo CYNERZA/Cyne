@@ -94,8 +94,6 @@ export function resetOpenAIClient(): void {
   openaiClient = null
 }
 
-// For backward compatibility with existing code
-export const resetAnthropicClient = resetOpenAIClient
 
 /**
  * Verify API key by making a simple request

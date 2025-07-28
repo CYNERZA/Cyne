@@ -251,28 +251,6 @@ export function getGlobalConfig(): GlobalConfig {
   return getConfig(GLOBAL_CYNERZA_FILE, DEFAULT_GLOBAL_CONFIG)
 }
 
-// TODO: Decide what to do with this code
-// export function getAnthropicApiKey(): null | string {
-//   const config = getGlobalConfig()
-//   if (process.env.USER_TYPE === 'SWE_BENCH') {
-//   }
-
-//   if (process.env.USER_TYPE === 'external') {
-//     return config.primaryApiKey ?? null
-//   }
-
-//   if (process.env.USER_TYPE === 'ant') {
-//     if (
-//       config.customApiKeyResponses?.approved?.includes(
-//       )
-//     ) {
-//     }
-//     return config.primaryApiKey ?? null
-//   }
-
-//   return null
-// }
-
 export function normalizeApiKeyForConfig(apiKey: string): string {
   return apiKey?.slice(-20) ?? ''
 }
