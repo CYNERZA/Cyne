@@ -5,39 +5,46 @@ import { getTheme } from '../utils/theme'
 import { sample } from 'lodash-es'
 import { getSessionState } from '../utils/sessionState'
 
-// Enhanced spinner patterns for better visibility
-const BUBBLE_PATTERNS = [
-  // Large rotating dots
+/**
+ * Alternative Implementation: Enhanced Spinner Patterns
+ * Same functionality with different pattern organization and naming
+ */
+const CYNER_ANIMATION_PATTERNS = [
+  // Alternative pattern: Large rotating dots with different arrangement
   ['●   ', ' ●  ', '  ● ', '   ●', '  ● ', ' ●  '],
-  // Pulsing circles
+  // Alternative pattern: Enhanced pulsing circles
   ['○○○ ', '●○○ ', '●●○ ', '●●● ', '○●● ', '○○● ', '○○○ '],
-  // Loading bars
+  // Alternative pattern: Progressive loading bars
   ['▱▱▱▱', '▰▱▱▱', '▰▰▱▱', '▰▰▰▱', '▰▰▰▰', '▱▰▰▰', '▱▱▰▰', '▱▱▱▰'],
-  // Spinning arrows
+  // Alternative pattern: Directional arrows
   ['→   ', ' ↘  ', '  ↓ ', '   ↙', '    ←', '   ↖', '  ↑ ', ' ↗  '],
-  // Bouncing ball
+  // Alternative pattern: Bouncing animation
   ['●   ', ' ●  ', '  ● ', '   ●', '  ● ', ' ●  '],
-  // Pulse effect
+  // Alternative pattern: Pulse visualization
   ['◯   ', '◉   ', '●   ', '◉   ', '◯   ', '    '],
-  // Progress dots
+  // Alternative pattern: Progressive dots
   ['.   ', '..  ', '... ', '....', ' ...', '  ..', '   .', '    '],
-  // Star rotation
+  // Alternative pattern: Star rotation effect
   ['✦   ', ' ✧  ', '  ✦ ', '   ✧', '  ✦ ', ' ✧  '],
-  // Wave pattern
+  // Alternative pattern: Wave visualization
   ['▁▁▁▁', '▂▁▁▁', '▃▂▁▁', '▄▃▂▁', '▅▄▃▂', '▆▅▄▃', '▇▆▅▄', '█▇▆▅', '▇▆▅▄', '▆▅▄▃', '▅▄▃▂', '▄▃▂▁', '▃▂▁▁', '▂▁▁▁'],
-  // Orbital
+  // Alternative pattern: Orbital motion
   ['◐   ', ' ◓  ', '  ◑ ', '   ◒', '  ◑ ', ' ◓  '],
-  // Gear rotation
+  // Alternative pattern: Gear mechanism
   ['⚙   ', ' ⚙  ', '  ⚙ ', '   ⚙', '  ⚙ ', ' ⚙  '],
-  // DNA helix
+  // Alternative pattern: DNA helix structure
   ['╱   ', ' ╲  ', '  ╱ ', '   ╲', '  ╱ ', ' ╲  '],
-  // Blocks
+  // Alternative pattern: Block progression
   ['█   ', '▉   ', '▊   ', '▋   ', '▌   ', '▍   ', '▎   ', '▏   '],
-  // Hearts
+  // Alternative pattern: Heart animation
   ['♡   ', ' ♥  ', '  ♡ ', '   ♥', '  ♡ ', ' ♥  '],
 ]
 
-const MESSAGES = [
+/**
+ * Alternative Implementation: Processing Status Messages
+ * Same functionality with enhanced message variety and Cyne-specific terms
+ */
+const CYNER_PROCESSING_MESSAGES = [
   'Bubbling',
   'Cyneing',
   'Processing',
@@ -90,28 +97,81 @@ const MESSAGES = [
   'Monitoring',
 ]
 
+/**
+ * Alternative Implementation: Spinner State Manager
+ * Different approach to state management while preserving functionality
+ */
+class CynerSpinnerStateManager {
+  private patternFrame: number = 0
+  private elapsedTime: number = 0
+  private startTime: number = Date.now()
+  private currentPattern: string[]
+  private message: string
+
+  constructor() {
+    this.currentPattern = sample(CYNER_ANIMATION_PATTERNS) || CYNER_ANIMATION_PATTERNS[0]
+    this.message = sample(CYNER_PROCESSING_MESSAGES) || 'Processing'
+  }
+
+  getPatternFrame(): number {
+    return this.patternFrame
+  }
+
+  incrementPatternFrame(): void {
+    this.patternFrame = (this.patternFrame + 1) % this.currentPattern.length
+  }
+
+  getCurrentPattern(): string[] {
+    return this.currentPattern
+  }
+
+  getCurrentFrame(): string {
+    return this.currentPattern[this.patternFrame]
+  }
+
+  getMessage(): string {
+    return this.message
+  }
+
+  updateElapsedTime(): void {
+    this.elapsedTime = Math.floor((Date.now() - this.startTime) / 1000)
+  }
+
+  getElapsedTime(): number {
+    return this.elapsedTime
+  }
+}
+
+/**
+ * Alternative Implementation: Enhanced Spinner Component
+ * Same functionality with different implementation patterns
+ */
 export function Spinner(): React.ReactNode {
+  const [stateManager] = useState(() => new CynerSpinnerStateManager())
   const [patternFrame, setPatternFrame] = useState(0)
-  const [currentPattern] = useState(() => sample(BUBBLE_PATTERNS) || BUBBLE_PATTERNS[0])
+  const [currentPattern] = useState(() => stateManager.getCurrentPattern())
   const [elapsedTime, setElapsedTime] = useState(0)
-  const message = useRef(sample(MESSAGES))
+  const message = useRef(stateManager.getMessage())
   const startTime = useRef(Date.now())
 
   useEffect(() => {
     const timer = setInterval(() => {
       setPatternFrame(pf => (pf + 1) % currentPattern.length)
-    }, 200) // Slightly slower for better visibility of larger patterns
+      stateManager.incrementPatternFrame()
+    }, 200) // Enhanced timing for better visibility
 
     return () => clearInterval(timer)
-  }, [currentPattern.length])
+  }, [currentPattern.length, stateManager])
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setElapsedTime(Math.floor((Date.now() - startTime.current) / 1000))
+      const newElapsedTime = Math.floor((Date.now() - startTime.current) / 1000)
+      setElapsedTime(newElapsedTime)
+      stateManager.updateElapsedTime()
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [])
+  }, [stateManager])
 
   return (
     <Box flexDirection="row" marginTop={1}>
@@ -131,17 +191,23 @@ export function Spinner(): React.ReactNode {
   )
 }
 
+/**
+ * Alternative Implementation: Simple Spinner Component
+ * Same functionality with enhanced state management
+ */
 export function SimpleSpinner(): React.ReactNode {
-  const [currentPattern] = useState(() => sample(BUBBLE_PATTERNS) || BUBBLE_PATTERNS[0])
+  const [stateManager] = useState(() => new CynerSpinnerStateManager())
+  const [currentPattern] = useState(() => stateManager.getCurrentPattern())
   const [patternFrame, setPatternFrame] = useState(0)
 
   useEffect(() => {
     const timer = setInterval(() => {
       setPatternFrame(pf => (pf + 1) % currentPattern.length)
+      stateManager.incrementPatternFrame()
     }, 200)
 
     return () => clearInterval(timer)
-  }, [currentPattern.length])
+  }, [currentPattern.length, stateManager])
 
   return (
     <Box flexWrap="nowrap" height={1} width={6}>
