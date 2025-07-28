@@ -1,6 +1,6 @@
 {
   "name": "cyne",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "bin": {
     "cyne": "cli.mjs",
     "cyne.cmd": "cyne.cmd"
@@ -53,6 +53,7 @@
     "ansi-escapes": "^7.0.0",
     "chalk": "^4.1.2",
     "cli-highlight": "^2.1.11",
+    "cli-markdown": "^3.5.1",
     "cli-table3": "^0.6.5",
     "commander": "^13.1.0",
     "debug": "^4.4.0",

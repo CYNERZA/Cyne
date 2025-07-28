@@ -1,4 +1,5 @@
 import * as React from 'react'
+import cliMd from 'cli-markdown';
 import { z } from 'zod'
 import { Tool, ValidationResult } from '../Tool.js'
 
@@ -101,12 +102,14 @@ export const BraveSearchTool: Tool<In, Out> = {
         yield { type: 'status', message: 'No results found' }
       }
       
+      const resultString = BraveSearchTool.renderResultForAssistant(output)
+      // Render markdown in terminal using cli-markdown
+      console.log(cliMd(resultString))
       yield {
         type: 'result',
         data: output,
-        resultForAssistant: BraveSearchTool.renderResultForAssistant(output)
+        resultForAssistant: resultString
       }
-      
       return output
       
     } catch (error: any) {
@@ -160,14 +163,19 @@ export const BraveSearchTool: Tool<In, Out> = {
       })
     }
     
-    // Add web results
+    // Add web results (limit to 4, show ... if more)
     if (hasWebResults) {
       output += '## Web Results:\n'
-      results.web_results.forEach((result: any, index: number) => {
+      const maxResults = 4
+      const webResults = results.web_results.slice(0, maxResults)
+      webResults.forEach((result: any, index: number) => {
         output += `${index + 1}. **${result.title}**\n`
         output += `   ${result.description}\n`
         output += `   URL: ${result.url}\n\n`
       })
+      if (results.web_results.length > maxResults) {
+        output += '...\n'
+      }
     }
     
     return output
