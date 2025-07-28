@@ -1,6 +1,6 @@
 {
   "name": "cyne",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "bin": {
     "cyne": "cli.mjs",
     "cyne.cmd": "cyne.cmd"
@@ -69,6 +69,7 @@
     "lodash-es": "^4.17.21",
     "lru-cache": "^11.0.2",
     "marked": "^15.0.7",
+    "marked-terminal": "^7.3.0",
     "nanoid": "^5.1.2",
     "openai": "^4.86.1",
     "react": "18.3.1",

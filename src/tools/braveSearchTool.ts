@@ -1,7 +1,29 @@
 import * as React from 'react'
-import cliMd from 'cli-markdown';
+import { marked } from 'marked'
 import { z } from 'zod'
 import { Tool, ValidationResult } from '../Tool.js'
+
+// Enhanced terminal markdown renderer with better styling
+function renderMarkdownToTerminal(markdown: string): string {
+  return markdown
+    // Main headers (##)
+    .replace(/^## (.+)$/gm, '\n\x1b[1m\x1b[4m\x1b[36m$1\x1b[0m\n')
+    // Numbered list items with titles
+    .replace(/^(\d+)\. \*\*(.+?)\*\*$/gm, '\x1b[1m\x1b[32m$1.\x1b[0m \x1b[1m\x1b[37m$2\x1b[0m')
+    // HTML strong tags to bold
+    .replace(/<strong>(.+?)<\/strong>/g, '\x1b[1m\x1b[37m$1\x1b[0m')
+    // Bold text (keep existing)
+    .replace(/\*\*(.+?)\*\*/g, '\x1b[1m\x1b[37m$1\x1b[0m')
+    // URLs
+    .replace(/^   URL: (.+)$/gm, '   \x1b[2m\x1b[34m🔗 $1\x1b[0m')
+    .replace(/^   Source: (.+)$/gm, '   \x1b[2m\x1b[34m📚 $1\x1b[0m')
+    // Descriptions (indented lines that aren't URLs)
+    .replace(/^   (?!URL:|Source:)(.+)$/gm, '   \x1b[90m$1\x1b[0m')
+    // Code snippets
+    .replace(/`(.+?)`/g, '\x1b[43m\x1b[30m $1 \x1b[0m')
+    // Add some spacing
+    .replace(/\n\n/g, '\n\n')
+}
 
 export const inputSchema = z.strictObject({
   query: z.string().describe('The search query to send to Brave Search'),
@@ -103,8 +125,10 @@ export const BraveSearchTool: Tool<In, Out> = {
       }
       
       const resultString = BraveSearchTool.renderResultForAssistant(output)
-      // Render markdown in terminal using cli-markdown
-      console.log(cliMd(resultString))
+      
+      // Render markdown in terminal with colors
+      console.log(renderMarkdownToTerminal(resultString))
+      
       yield {
         type: 'result',
         data: output,
