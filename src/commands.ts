@@ -8,8 +8,6 @@ import doctor from './commands/doctor'
 import help from './commands/help'
 import init from './commands/init'
 import listen from './commands/listen'
-import login from './commands/login'
-import logout from './commands/logout'
 import mcp from './commands/mcp'
 import * as model from './commands/model'
 import onboarding from './commands/onboarding'
@@ -19,11 +17,12 @@ import review from './commands/review'
 import terminalSetup from './commands/terminalSetup'
 import { windowsInstaller, windowsUninstaller } from './commands/windowsInstaller'
 import { Tool } from './Tool'
+import type { ToolUseContext } from './Tool'
 import resume from './commands/resume'
 import { getMCPCommands } from './services/mcpClient'
 import { memoize } from 'lodash-es'
 import type { Message } from './query'
-import { isOpenAIAuthEnabled } from './utils/auth'
+import React from 'react'
 
 type MessageParam = {
   role: 'user' | 'assistant'
@@ -98,7 +97,6 @@ const COMMANDS = memoize((): Command[] => [
   terminalSetup,
   windowsInstaller,
   windowsUninstaller,
-  ...(isOpenAIAuthEnabled() ? [logout, login()] : []),
   ...INTERNAL_ONLY_COMMANDS,
 ])
 

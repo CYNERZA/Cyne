@@ -98,12 +98,6 @@ export type ProviderType =
   | 'litellm'
   | 'custom'
 
-export type AccountInfo = {
-  accountUuid: string
-  emailAddress: string
-  organizationUuid?: string
-}
-
 export type GlobalConfig = {
   projects?: Record<string, ProjectConfig>
   numStartups: number
@@ -140,7 +134,6 @@ export type GlobalConfig = {
   largeModelMaxTokens?: number
   maxTokens?: number
   hasAcknowledgedCostThreshold?: boolean
-  oauthAccount?: AccountInfo
   iterm2KeyBindingInstalled?: boolean // Legacy - keeping for backward compatibility
   shiftEnterKeyBindingInstalled?: boolean
   proxy?: string

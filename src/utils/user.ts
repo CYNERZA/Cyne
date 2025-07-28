@@ -30,8 +30,6 @@ export const getUser = memoize(async (): Promise<StatsigUser> => {
     custom: {
       nodeVersion: env.nodeVersion,
       userType: process.env.USER_TYPE,
-      organizationUuid: config.oauthAccount?.organizationUuid,
-      accountUuid: config.oauthAccount?.accountUuid,
     },
   }
 })
