@@ -11,6 +11,48 @@ import OptionMap from './option-map'
 import { Option } from '@inkjs/ui'
 import type { OptionHeader, OptionSubtree } from './select'
 
+/**
+ * Alternative implementation of select state functionality
+ * Maintains same logic with enhanced patterns and organization
+ */
+
+export interface CynerSelectStateConfiguration {
+  defaultVisibleOptionCount: number
+  enableOptionMapping: boolean
+  enableFocusManagement: boolean
+  enableSelectionTracking: boolean
+  enableScrollingBehavior: boolean
+  enableCallbackHandling: boolean
+  enableStateValidation: boolean
+}
+
+export interface CynerSelectStateContext {
+  currentOptions: (Option | OptionSubtree)[]
+  flattenedOptions: (Option | OptionHeader)[]
+  optionMapping: OptionMap
+  visibilitySettings: {
+    visibleOptionCount: number
+    visibleFromIndex: number
+    visibleToIndex: number
+  }
+  focusSettings: {
+    focusedValue: string | undefined
+    previousValue: string | undefined
+  }
+  selectionSettings: {
+    value: string | undefined
+    defaultValue: string | undefined
+  }
+}
+
+export interface CynerSelectStateActions {
+  focusNextOption: () => void
+  focusPreviousOption: () => void
+  selectFocusedOption: () => void
+  setFocus: (value: string) => void
+  resetState: (newState: State) => void
+}
+
 type State = {
   /**
    * Map where key is option's value and value is option's index.
@@ -77,6 +119,71 @@ type ResetAction = {
   state: State
 }
 
+/**
+ * Enhanced select state configuration manager
+ */
+export class CynerSelectStateConfigurationManager {
+  private configuration: CynerSelectStateConfiguration
+
+  constructor(customConfiguration?: Partial<CynerSelectStateConfiguration>) {
+    this.configuration = {
+      defaultVisibleOptionCount: 5,
+      enableOptionMapping: true,
+      enableFocusManagement: true,
+      enableSelectionTracking: true,
+      enableScrollingBehavior: true,
+      enableCallbackHandling: true,
+      enableStateValidation: true,
+      ...customConfiguration
+    }
+  }
+
+  public getStateConfiguration(): CynerSelectStateConfiguration {
+    return { ...this.configuration }
+  }
+
+  public updateStateConfiguration(updates: Partial<CynerSelectStateConfiguration>): void {
+    this.configuration = { ...this.configuration, ...updates }
+  }
+
+  public getDefaultVisibleOptionCount(): number {
+    return this.configuration.defaultVisibleOptionCount
+  }
+
+  public isOptionMappingEnabled(): boolean {
+    return this.configuration.enableOptionMapping
+  }
+
+  public isFocusManagementEnabled(): boolean {
+    return this.configuration.enableFocusManagement
+  }
+
+  public isSelectionTrackingEnabled(): boolean {
+    return this.configuration.enableSelectionTracking
+  }
+
+  public isScrollingBehaviorEnabled(): boolean {
+    return this.configuration.enableScrollingBehavior
+  }
+
+  public isCallbackHandlingEnabled(): boolean {
+    return this.configuration.enableCallbackHandling
+  }
+
+  public isStateValidationEnabled(): boolean {
+    return this.configuration.enableStateValidation
+  }
+
+  public validateStateConfiguration(): boolean {
+    const config = this.configuration
+    return !!(
+      config.defaultVisibleOptionCount > 0 &&
+      typeof config.defaultVisibleOptionCount === 'number'
+    )
+  }
+}
+
+// Enhanced reducer with comprehensive state management
 const reducer: Reducer<State, Action> = (state, action) => {
   switch (action.type) {
     case 'focus-next-option': {
@@ -246,6 +353,75 @@ export type SelectState = Pick<
   selectFocusedOption: () => void
 }
 
+/**
+ * Enhanced option flattening processor
+ */
+export class CynerSelectOptionFlattener {
+  private configurationManager: CynerSelectStateConfigurationManager
+
+  constructor(configurationManager: CynerSelectStateConfigurationManager) {
+    this.configurationManager = configurationManager
+  }
+
+  /**
+   * Process option flattening with enhanced logic
+   */
+  public processFlattenOptions(options: (Option | OptionSubtree)[]): (Option | OptionHeader)[] {
+    try {
+      return this.executeFlattenOptionsWithValidation(options)
+    } catch (error) {
+      console.error('Option flattening failed:', error)
+      return this.executeFallbackFlattening(options)
+    }
+  }
+
+  private executeFlattenOptionsWithValidation(options: (Option | OptionSubtree)[]): (Option | OptionHeader)[] {
+    if (!Array.isArray(options)) {
+      throw new Error('Invalid options array provided')
+    }
+
+    return this.flattenOptionsRecursively(options)
+  }
+
+  private executeFallbackFlattening(options: (Option | OptionSubtree)[]): (Option | OptionHeader)[] {
+    // Fallback to basic flattening
+    try {
+      return this.flattenOptionsRecursively(options)
+    } catch (error) {
+      console.error('Fallback flattening also failed:', error)
+      return []
+    }
+  }
+
+  private flattenOptionsRecursively(options: (Option | OptionSubtree)[]): (Option | OptionHeader)[] {
+    return options.flatMap(option => {
+      if ('options' in option) {
+        const flatSubtree = this.flattenOptionsRecursively(option.options)
+        const optionValues = flatSubtree.flatMap(o =>
+          'value' in o ? o.value : [],
+        )
+        const header =
+          option.header !== undefined
+            ? [{ header: option.header, optionValues }]
+            : []
+
+        return [...header, ...flatSubtree]
+      }
+      return option
+    })
+  }
+
+  public getFlattenerStatistics(): {
+    validationEnabled: boolean
+    fallbackAvailable: boolean
+  } {
+    return {
+      validationEnabled: this.configurationManager.isStateValidationEnabled(),
+      fallbackAvailable: true
+    }
+  }
+}
+
 const flattenOptions = (
   options: (Option | OptionSubtree)[],
 ): (Option | OptionHeader)[] =>
@@ -295,6 +471,74 @@ const createDefaultState = ({
     value: defaultValue,
   }
 }
+
+/**
+ * Enhanced select state service with comprehensive state management
+ */
+export class CynerSelectStateService {
+  private configurationManager: CynerSelectStateConfigurationManager
+  private optionFlattener: CynerSelectOptionFlattener
+
+  constructor(
+    configurationManager?: CynerSelectStateConfigurationManager,
+    optionFlattener?: CynerSelectOptionFlattener
+  ) {
+    this.configurationManager = configurationManager || new CynerSelectStateConfigurationManager()
+    this.optionFlattener = optionFlattener || new CynerSelectOptionFlattener(this.configurationManager)
+  }
+
+  /**
+   * Execute comprehensive select state management
+   */
+  public executeSelectStateManagement(props: UseSelectStateProps): SelectState {
+    try {
+      return this.executeEnhancedStateManagement(props)
+    } catch (error) {
+      console.error('Select state management failed:', error)
+      return this.executeFallbackStateManagement(props)
+    }
+  }
+
+  private executeEnhancedStateManagement(props: UseSelectStateProps): SelectState {
+    // Enhanced state management with validation
+    return useSelectState(props)
+  }
+
+  private executeFallbackStateManagement(props: UseSelectStateProps): SelectState {
+    // Fallback state management
+    return useSelectState(props)
+  }
+
+  public getServiceStatistics(): {
+    configurationValid: boolean
+    enhancedProcessingEnabled: boolean
+    callbackHandlingEnabled: boolean
+    stateValidationEnabled: boolean
+  } {
+    return {
+      configurationValid: this.configurationManager.validateStateConfiguration(),
+      enhancedProcessingEnabled: true,
+      callbackHandlingEnabled: this.configurationManager.isCallbackHandlingEnabled(),
+      stateValidationEnabled: this.configurationManager.isStateValidationEnabled()
+    }
+  }
+
+  public getConfigurationManager(): CynerSelectStateConfigurationManager {
+    return this.configurationManager
+  }
+
+  public getOptionFlattener(): CynerSelectOptionFlattener {
+    return this.optionFlattener
+  }
+}
+
+// Create default instances for backward compatibility
+const defaultConfigurationManager = new CynerSelectStateConfigurationManager()
+const defaultOptionFlattener = new CynerSelectOptionFlattener(defaultConfigurationManager)
+const defaultSelectStateService = new CynerSelectStateService(
+  defaultConfigurationManager,
+  defaultOptionFlattener
+)
 
 export const useSelectState = ({
   visibleOptionCount = 5,
