@@ -14,7 +14,7 @@ import { NotebookEditTool } from './tools/NotebookEditTool/NotebookEditTool'
 import { NotebookReadTool } from './tools/NotebookReadTool/NotebookReadTool'
 import { PlanningTool } from './tools/PlanningTool/PlanningTool'
 import { ThinkTool } from './tools/ThinkTool/ThinkTool'
-import { BraveSearchTool } from './tools/braveSearchTool'
+import { BraveSearchTool } from './tools/BraveSearchTool'
 import { getMCPTools } from './services/mcpClient'
 import { memoize } from 'lodash-es'
 

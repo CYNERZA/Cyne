@@ -5,7 +5,7 @@ import { getTheme, ThemeNames } from '../utils/theme'
 import { useMemo } from 'react'
 import { wrapText } from '../utils/format'
 
-type Props = {
+interface StructuredDiffProps {
   patch: Hunk
   dim: boolean
   width: number
@@ -17,101 +17,101 @@ export function StructuredDiff({
   dim,
   width,
   overrideTheme,
-}: Props): React.ReactNode {
-  const diff = useMemo(
-    () => formatDiff(patch.lines, patch.oldStart, width, dim, overrideTheme),
+}: StructuredDiffProps): React.ReactNode {
+  const formattedDiff = useMemo(
+    () => createFormattedDiff(patch.lines, patch.oldStart, width, dim, overrideTheme),
     [patch.lines, patch.oldStart, width, dim, overrideTheme],
   )
 
-  return diff.map((_, i) => <Box key={i}>{_}</Box>)
+  return formattedDiff.map((diffElement, index) => <Box key={index}>{diffElement}</Box>)
 }
 
-function formatDiff(
-  lines: string[],
-  startingLineNumber: number,
-  width: number,
-  dim: boolean,
-  overrideTheme?: ThemeNames,
+function createFormattedDiff(
+  codeLines: string[],
+  initialLineNumber: number,
+  containerWidth: number,
+  isDimmed: boolean,
+  themeOverride?: ThemeNames,
 ): React.ReactNode[] {
-  const theme = getTheme(overrideTheme)
+  const currentTheme = getTheme(themeOverride)
 
-  const ls = numberDiffLines(
-    lines.map(code => {
-      if (code.startsWith('+')) {
+  const processedLines = assignLineNumbers(
+    codeLines.map(codeLine => {
+      if (codeLine.startsWith('+')) {
         return {
-          code: ' ' + code.slice(1),
+          code: ' ' + codeLine.slice(1),
           i: 0,
           type: 'add',
         }
       }
-      if (code.startsWith('-')) {
+      if (codeLine.startsWith('-')) {
         return {
-          code: ' ' + code.slice(1),
+          code: ' ' + codeLine.slice(1),
           i: 0,
           type: 'remove',
         }
       }
-      return { code, i: 0, type: 'nochange' }
+      return { code: codeLine, i: 0, type: 'nochange' }
     }),
-    startingLineNumber,
+    initialLineNumber,
   )
 
-  const maxLineNumber = Math.max(...ls.map(({ i }) => i))
-  const maxWidth = maxLineNumber.toString().length
+  const maxLineNumber = Math.max(...processedLines.map(({ i }) => i))
+  const lineNumberWidth = maxLineNumber.toString().length
 
-  return ls.flatMap(({ type, code, i }) => {
-    const wrappedLines = wrapText(code, width - maxWidth)
-    return wrappedLines.map((line, lineIndex) => {
-      const key = `${type}-${i}-${lineIndex}`
+  return processedLines.flatMap(({ type, code, i }) => {
+    const textLines = wrapText(code, containerWidth - lineNumberWidth)
+    return textLines.map((textLine, lineIndex) => {
+      const elementKey = `${type}-${i}-${lineIndex}`
       switch (type) {
         case 'add':
           return (
-            <Text key={key}>
-              <LineNumber
+            <Text key={elementKey}>
+              <LineNumberDisplay
                 i={lineIndex === 0 ? i : undefined}
-                width={maxWidth}
+                width={lineNumberWidth}
               />
               <Text
-                color={overrideTheme ? theme.text : undefined}
+                color={themeOverride ? currentTheme.text : undefined}
                 backgroundColor={
-                  dim ? theme.diff.addedDimmed : theme.diff.added
+                  isDimmed ? currentTheme.diff.addedDimmed : currentTheme.diff.added
                 }
-                dimColor={dim}
+                dimColor={isDimmed}
               >
-                {line}
+                {textLine}
               </Text>
             </Text>
           )
         case 'remove':
           return (
-            <Text key={key}>
-              <LineNumber
+            <Text key={elementKey}>
+              <LineNumberDisplay
                 i={lineIndex === 0 ? i : undefined}
-                width={maxWidth}
+                width={lineNumberWidth}
               />
               <Text
-                color={overrideTheme ? theme.text : undefined}
+                color={themeOverride ? currentTheme.text : undefined}
                 backgroundColor={
-                  dim ? theme.diff.removedDimmed : theme.diff.removed
+                  isDimmed ? currentTheme.diff.removedDimmed : currentTheme.diff.removed
                 }
-                dimColor={dim}
+                dimColor={isDimmed}
               >
-                {line}
+                {textLine}
               </Text>
             </Text>
           )
         case 'nochange':
           return (
-            <Text key={key}>
-              <LineNumber
+            <Text key={elementKey}>
+              <LineNumberDisplay
                 i={lineIndex === 0 ? i : undefined}
-                width={maxWidth}
+                width={lineNumberWidth}
               />
               <Text
-                color={overrideTheme ? theme.text : undefined}
-                dimColor={dim}
+                color={themeOverride ? currentTheme.text : undefined}
+                dimColor={isDimmed}
               >
-                {line}
+                {textLine}
               </Text>
             </Text>
           )
@@ -120,65 +120,68 @@ function formatDiff(
   })
 }
 
-function LineNumber({
+function LineNumberDisplay({
   i,
   width,
 }: {
   i: number | undefined
   width: number
 }): React.ReactNode {
+  const theme = getTheme()
+  const displayText = i !== undefined ? i.toString().padStart(width) : ' '.repeat(width)
+  
   return (
-    <Text color={getTheme().secondaryText}>
-      {i !== undefined ? i.toString().padStart(width) : ' '.repeat(width)}{' '}
+    <Text color={theme.secondaryText}>
+      {displayText}{' '}
     </Text>
   )
 }
 
-function numberDiffLines(
-  diff: { code: string; type: string }[],
-  startLine: number,
+function assignLineNumbers(
+  diffEntries: { code: string; type: string }[],
+  startingLine: number,
 ): { code: string; type: string; i: number }[] {
-  let i = startLine
-  const result: { code: string; type: string; i: number }[] = []
-  const queue = [...diff]
+  let currentLine = startingLine
+  const processedResult: { code: string; type: string; i: number }[] = []
+  const entryQueue = [...diffEntries]
 
-  while (queue.length > 0) {
-    const { code, type } = queue.shift()!
-    const line = {
+  while (entryQueue.length > 0) {
+    const { code, type } = entryQueue.shift()!
+    const lineEntry = {
       code: code,
       type,
-      i,
+      i: currentLine,
     }
 
-    // Update counters based on change type
+    // Update line counters based on change type
     switch (type) {
       case 'nochange':
-        i++
-        result.push(line)
+        currentLine++
+        processedResult.push(lineEntry)
         break
       case 'add':
-        i++
-        result.push(line)
+        currentLine++
+        processedResult.push(lineEntry)
         break
       case 'remove': {
-        result.push(line)
-        let numRemoved = 0
-        while (queue[0]?.type === 'remove') {
-          i++
-          const { code, type } = queue.shift()!
-          const line = {
+        processedResult.push(lineEntry)
+        let removedCount = 0
+        while (entryQueue[0]?.type === 'remove') {
+          currentLine++
+          const { code, type } = entryQueue.shift()!
+          const removeEntry = {
             code: code,
             type,
-            i,
+            i: currentLine,
           }
-          result.push(line)
-          numRemoved++
+          processedResult.push(removeEntry)
+          removedCount++
         }
-        i -= numRemoved
+        currentLine -= removedCount
         break
       }
     }
   }
 
-  return result
+  return processedResult
 }

@@ -1,42 +1,49 @@
 import { type Option } from '@inkjs/ui'
 import { optionHeaderKey, type OptionHeader } from './select'
 
-type OptionMapItem = (Option | OptionHeader) & {
-  previous: OptionMapItem | undefined
-  next: OptionMapItem | undefined
+interface OptionMapEntry {
+  previous: OptionMapEntry | undefined
+  next: OptionMapEntry | undefined
   index: number
 }
 
-export default class OptionMap extends Map<string, OptionMapItem> {
+type OptionMapItem = (Option | OptionHeader) & OptionMapEntry
+
+class OptionMap extends Map<string, OptionMapItem> {
   readonly first: OptionMapItem | undefined
 
-  constructor(options: (Option | OptionHeader)[]) {
-    const items: Array<[string, OptionMapItem]> = []
-    let firstItem: OptionMapItem | undefined
-    let previous: OptionMapItem | undefined
-    let index = 0
+  constructor(optionsList: (Option | OptionHeader)[]) {
+    const mapEntries: Array<[string, OptionMapItem]> = []
+    let initialItem: OptionMapItem | undefined
+    let previousEntry: OptionMapItem | undefined
+    let currentIndex = 0
 
-    for (const option of options) {
-      const item = {
-        ...option,
-        previous,
+    for (const optionItem of optionsList) {
+      const mapEntry: OptionMapItem = {
+        ...optionItem,
+        previous: previousEntry,
         next: undefined,
-        index,
+        index: currentIndex,
       }
 
-      if (previous) {
-        previous.next = item
+      if (previousEntry !== undefined) {
+        previousEntry.next = mapEntry
       }
 
-      firstItem ||= item
+      if (initialItem === undefined) {
+        initialItem = mapEntry
+      }
 
-      const key = 'value' in option ? option.value : optionHeaderKey(option)
-      items.push([key, item])
-      index++
-      previous = item
+      const entryKey = 'value' in optionItem ? optionItem.value : optionHeaderKey(optionItem)
+      mapEntries.push([entryKey, mapEntry])
+      
+      currentIndex++
+      previousEntry = mapEntry
     }
 
-    super(items)
-    this.first = firstItem
+    super(mapEntries)
+    this.first = initialItem
   }
 }
+
+export default OptionMap

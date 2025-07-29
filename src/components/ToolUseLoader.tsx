@@ -4,18 +4,21 @@ import { useInterval } from '../hooks/useInterval'
 import { getTheme } from '../utils/theme'
 import { BLACK_CIRCLE } from '../constants/figures'
 
-type Props = {
+interface ToolUseLoaderProps {
   isError: boolean
   isUnresolved: boolean
   shouldAnimate: boolean
 }
 
+const ANIMATION_INTERVAL = 600
+const LOADER_WIDTH = 2
+
 export function ToolUseLoader({
   isError,
   isUnresolved,
   shouldAnimate,
-}: Props): React.ReactNode {
-  const [isVisible, setIsVisible] = React.useState(true)
+}: ToolUseLoaderProps): React.ReactNode {
+  const [isLoaderVisible, setIsLoaderVisible] = React.useState(true)
 
   useInterval(() => {
     if (!shouldAnimate) {
@@ -23,18 +26,20 @@ export function ToolUseLoader({
     }
     // To avoid flickering when the tool use confirm is visible, we set the loader to be visible
     // when the tool use confirm is visible.
-    setIsVisible(_ => !_)
-  }, 600)
+    setIsLoaderVisible(previousState => !previousState)
+  }, ANIMATION_INTERVAL)
 
-  const color = isUnresolved
+  const displayColor = isUnresolved
     ? getTheme().secondaryText
     : isError
       ? getTheme().error
       : getTheme().success
 
+  const displayContent = isLoaderVisible ? BLACK_CIRCLE : '  '
+
   return (
-    <Box minWidth={2}>
-      <Text color={color}>{isVisible ? BLACK_CIRCLE : '  '}</Text>
+    <Box minWidth={LOADER_WIDTH}>
+      <Text color={displayColor}>{displayContent}</Text>
     </Box>
   )
 }

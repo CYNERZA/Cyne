@@ -13,7 +13,8 @@ import { useInterval } from '../hooks/useInterval'
 import { logEvent } from '../services/statsig'
 import { MACRO } from '../constants/macros'
 import { PRODUCT_COMMAND } from '../constants/product'
-type Props = {
+
+interface AutoUpdaterProps {
   debug: boolean
   isUpdating: boolean
   onChangeIsUpdating: (isUpdating: boolean) => void
@@ -21,20 +22,28 @@ type Props = {
   autoUpdaterResult: AutoUpdaterResult | null
 }
 
-export function AutoUpdater({
-  debug,
-  isUpdating,
-  onChangeIsUpdating,
-  onAutoUpdaterResult,
-  autoUpdaterResult,
-}: Props): React.ReactNode {
+interface VersionInfo {
+  global?: string | null
+  latest?: string | null
+}
+
+const DEVELOPMENT_ENVIRONMENTS = ['test', 'dev']
+const UPDATE_CHECK_INTERVAL = 30 * 60 * 1000 // 30 minutes
+
+export function AutoUpdater(props: AutoUpdaterProps): React.ReactNode {
+  const {
+    debug,
+    isUpdating,
+    onChangeIsUpdating,
+    onAutoUpdaterResult,
+    autoUpdaterResult,
+  } = props
+  
   const theme = getTheme()
-  const [versions, setVersions] = useState<{
-    global?: string | null
-    latest?: string | null
-  }>({})
-  const checkForUpdates = React.useCallback(async () => {
-    if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'dev') {
+  const [versionInfo, setVersionInfo] = useState<VersionInfo>({})
+
+  const performUpdateCheck = React.useCallback(async (): Promise<void> => {
+    if (DEVELOPMENT_ENVIRONMENTS.includes(process.env.NODE_ENV || '')) {
       return
     }
 
@@ -42,74 +51,112 @@ export function AutoUpdater({
       return
     }
 
-    // Get versions
-    const globalVersion = MACRO.VERSION
-    const latestVersion = await getLatestVersion()
-    const isDisabled = true //await isAutoUpdaterDisabled()
+    const currentVersion = MACRO.VERSION
+    const remoteVersion = await getLatestVersion()
+    const updaterDisabled = true // await isAutoUpdaterDisabled()
 
-    setVersions({ global: globalVersion, latest: latestVersion })
+    setVersionInfo({ 
+      global: currentVersion, 
+      latest: remoteVersion 
+    })
 
-    // Check if update needed and perform update
-    if (
-      !isDisabled &&
-      globalVersion &&
-      latestVersion &&
-      !gte(globalVersion, latestVersion)
-    ) {
-      const startTime = Date.now()
+    const shouldUpdate = 
+      !updaterDisabled &&
+      currentVersion &&
+      remoteVersion &&
+      !gte(currentVersion, remoteVersion)
+
+    if (shouldUpdate) {
+      const updateStartTime = Date.now()
       onChangeIsUpdating(true)
-      const installStatus = await installGlobalPackage()
+      
+      const installResult = await installGlobalPackage()
       onChangeIsUpdating(false)
 
-      if (installStatus === 'success') {
+      const updateDuration = Date.now() - updateStartTime
+
+      if (installResult === 'success') {
         logEvent('tengu_auto_updater_success', {
-          fromVersion: globalVersion,
-          toVersion: latestVersion,
-          durationMs: String(Date.now() - startTime),
+          fromVersion: currentVersion,
+          toVersion: remoteVersion,
+          durationMs: String(updateDuration),
         })
       } else {
         logEvent('tengu_auto_updater_fail', {
-          fromVersion: globalVersion,
-          attemptedVersion: latestVersion,
-          status: installStatus,
-          durationMs: String(Date.now() - startTime),
+          fromVersion: currentVersion,
+          attemptedVersion: remoteVersion,
+          status: installResult,
+          durationMs: String(updateDuration),
         })
       }
 
       onAutoUpdaterResult({
-        version: latestVersion!,
-        status: installStatus,
+        version: remoteVersion!,
+        status: installResult,
       })
     }
-    // Don't re-render when isUpdating changes
-    // TODO: Find a cleaner way to do this
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onAutoUpdaterResult])
+  }, [onAutoUpdaterResult, isUpdating, onChangeIsUpdating])
 
-  // Initial check
   useEffect(() => {
-    // checkForUpdates()
-  }, [checkForUpdates])
+    // Initial update check (commented out)
+    // performUpdateCheck()
+  }, [performUpdateCheck])
 
-  // Check every 30 minutes
-  // useInterval(checkForUpdates, 30 * 60 * 1000)
+  // Periodic update checks (commented out)
+  // useInterval(performUpdateCheck, UPDATE_CHECK_INTERVAL)
 
   if (debug) {
     return (
       <Box flexDirection="row">
         <Text dimColor>
-          globalVersion: {versions.global} &middot; latestVersion:{' '}
-          {versions.latest}
+          globalVersion: {versionInfo.global} &middot; latestVersion:{' '}
+          {versionInfo.latest}
         </Text>
       </Box>
     )
   }
 
-  if (!autoUpdaterResult?.version && (!versions.global || !versions.latest)) {
+  const hasVersions = versionInfo.global && versionInfo.latest
+  const hasResult = autoUpdaterResult?.version
+
+  if (!hasResult && !hasVersions) {
     return null
   }
 
-  if (!autoUpdaterResult?.version && !isUpdating) {
+  if (!hasResult && !isUpdating) {
+    return null
+  }
+
+  const renderUpdateStatus = (): React.ReactNode => {
+    if (isUpdating) {
+      return (
+        <Box>
+          <Text color={theme.secondaryText} dimColor wrap="end">
+            Auto-updating to v{versionInfo.latest}…
+          </Text>
+        </Box>
+      )
+    }
+
+    if (autoUpdaterResult?.status === 'success' && autoUpdaterResult?.version) {
+      return (
+        <Text color={theme.success}>
+          ✓ Update installed &middot; Restart to apply
+        </Text>
+      )
+    }
+
+    const failureStatuses = ['install_failed', 'no_permissions']
+    if (failureStatuses.includes(autoUpdaterResult?.status || '')) {
+      return (
+        <Text color={theme.error}>
+          ✗ Auto-update failed &middot; Try{' '}
+          <Text bold>{PRODUCT_COMMAND} doctor</Text> or{' '}
+          <Text bold>npm i -g cyne</Text>
+        </Text>
+      )
+    }
+
     return null
   }
 
@@ -117,32 +164,11 @@ export function AutoUpdater({
     <Box flexDirection="row">
       {debug && (
         <Text dimColor>
-          globalVersion: {versions.global} &middot; latestVersion:{' '}
-          {versions.latest}
+          globalVersion: {versionInfo.global} &middot; latestVersion:{' '}
+          {versionInfo.latest}
         </Text>
       )}
-      {isUpdating && (
-        <>
-          <Box>
-            <Text color={theme.secondaryText} dimColor wrap="end">
-              Auto-updating to v{versions.latest}…
-            </Text>
-          </Box>
-        </>
-      )}
-      {autoUpdaterResult?.status === 'success' && autoUpdaterResult?.version ? (
-        <Text color={theme.success}>
-          ✓ Update installed &middot; Restart to apply
-        </Text>
-      ) : null}
-      {(autoUpdaterResult?.status === 'install_failed' ||
-        autoUpdaterResult?.status === 'no_permissions') && (
-        <Text color={theme.error}>
-          ✗ Auto-update failed &middot; Try{' '}
-          <Text bold>{PRODUCT_COMMAND} doctor</Text> or{' '}
-          <Text bold>npm i -g {MACRO.PACKAGE_URL}</Text>
-        </Text>
-      )}
+      {renderUpdateStatus()}
     </Box>
   )
 }

@@ -5,7 +5,7 @@ import { useTextInput } from '../hooks/useTextInput'
 import { getTheme } from '../utils/theme'
 import { type Key } from 'ink'
 
-export type Props = {
+export interface TextInputProps {
   /**
    * Optional callback for handling history navigation on up arrow at start of input
    */
@@ -138,7 +138,7 @@ export default function TextInput({
   disableCursorMovementForUpDownKeys = false,
   cursorOffset,
   onChangeCursorOffset,
-}: Props) {
+}: TextInputProps) {
   const { onInput, renderedValue } = useTextInput({
     value: originalValue,
     onChange,
@@ -155,7 +155,7 @@ export default function TextInput({
     cursorChar: showCursor ? ' ' : '',
     highlightPastedText,
     invert: chalk.inverse,
-    themeText: (text: string) => chalk.hex(getTheme().text)(text),
+    themeText: (textContent: string) => chalk.hex(getTheme().text)(textContent),
     columns,
     onImagePaste,
     disableCursorMovementForUpDownKeys,
@@ -164,28 +164,28 @@ export default function TextInput({
   })
 
   // Paste detection state
-  const [pasteState, setPasteState] = React.useState<{
-    chunks: string[]
-    timeoutId: ReturnType<typeof setTimeout> | null
-  }>({ chunks: [], timeoutId: null })
+  const [pasteDetectionState, setPasteDetectionState] = React.useState<{
+    textChunks: string[]
+    timeoutIdentifier: ReturnType<typeof setTimeout> | null
+  }>({ textChunks: [], timeoutIdentifier: null })
 
-  const resetPasteTimeout = (
+  const createPasteTimeout = (
     currentTimeoutId: ReturnType<typeof setTimeout> | null,
   ) => {
     if (currentTimeoutId) {
       clearTimeout(currentTimeoutId)
     }
     return setTimeout(() => {
-      setPasteState(({ chunks }) => {
-        const pastedText = chunks.join('')
+      setPasteDetectionState(({ textChunks }) => {
+        const combinedText = textChunks.join('')
         // Schedule callback after current render to avoid state updates during render
-        Promise.resolve().then(() => onPaste!(pastedText))
-        return { chunks: [], timeoutId: null }
+        Promise.resolve().then(() => onPaste!(combinedText))
+        return { textChunks: [], timeoutIdentifier: null }
       })
     }, 100)
   }
 
-  const wrappedOnInput = (input: string, key: Key): void => {
+  const handleInputWrapper = (input: string, key: Key): void => {
     // Special handling for backspace or delete
     if (
       key.backspace ||
@@ -209,11 +209,12 @@ export default function TextInput({
     // that we would see e.g. 1024 characters and then just a few
     // more in the next frame that belong with the original paste.
     // This batching number is not consistent.
-    if (onPaste && (input.length > 800 || pasteState.timeoutId)) {
-      setPasteState(({ chunks, timeoutId }) => {
+    const PASTE_THRESHOLD = 800
+    if (onPaste && (input.length > PASTE_THRESHOLD || pasteDetectionState.timeoutIdentifier)) {
+      setPasteDetectionState(({ textChunks, timeoutIdentifier }) => {
         return {
-          chunks: [...chunks, input],
-          timeoutId: resetPasteTimeout(timeoutId),
+          textChunks: [...textChunks, input],
+          timeoutIdentifier: createPasteTimeout(timeoutIdentifier),
         }
       })
       return
@@ -222,25 +223,25 @@ export default function TextInput({
     onInput(input, key)
   }
 
-  useInput(wrappedOnInput, { isActive: focus })
+  useInput(handleInputWrapper, { isActive: focus })
 
-  let renderedPlaceholder = placeholder
+  let displayPlaceholder = placeholder
     ? chalk.hex(getTheme().secondaryText)(placeholder)
     : undefined
 
   // Fake mouse cursor, because we like punishment
   if (showCursor && focus) {
-    renderedPlaceholder =
+    displayPlaceholder =
       placeholder.length > 0
         ? chalk.inverse(placeholder[0]) +
           chalk.hex(getTheme().secondaryText)(placeholder.slice(1))
         : chalk.inverse(' ')
   }
 
-  const showPlaceholder = originalValue.length == 0 && placeholder
+  const shouldShowPlaceholder = originalValue.length == 0 && placeholder
   return (
     <Text wrap="truncate-end" dimColor={isDimmed}>
-      {showPlaceholder ? renderedPlaceholder : renderedValue}
+      {shouldShowPlaceholder ? displayPlaceholder : renderedValue}
     </Text>
   )
 }

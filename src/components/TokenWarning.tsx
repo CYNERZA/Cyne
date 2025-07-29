@@ -2,28 +2,30 @@ import { Box, Text } from 'ink'
 import * as React from 'react'
 import { getTheme } from '../utils/theme'
 
-type Props = {
+interface TokenWarningProps {
   tokenUsage: number
 }
 
-const MAX_TOKENS = 190_000 // leave wiggle room for /compact
-export const WARNING_THRESHOLD = MAX_TOKENS * 0.6 // 60%
-const ERROR_THRESHOLD = MAX_TOKENS * 0.8 // 80%
+const MAXIMUM_TOKENS = 190_000 // leave wiggle room for /compact
+export const WARNING_LEVEL = MAXIMUM_TOKENS * 0.6 // 60%
+export const WARNING_THRESHOLD = WARNING_LEVEL // backward compatibility
+const CRITICAL_LEVEL = MAXIMUM_TOKENS * 0.8 // 80%
 
-export function TokenWarning({ tokenUsage }: Props): React.ReactNode {
-  const theme = getTheme()
+export function TokenWarning({ tokenUsage }: TokenWarningProps): React.ReactNode {
+  const currentTheme = getTheme()
 
-  if (tokenUsage < WARNING_THRESHOLD) {
+  if (tokenUsage < WARNING_LEVEL) {
     return null
   }
 
-  const isError = tokenUsage >= ERROR_THRESHOLD
+  const isCritical = tokenUsage >= CRITICAL_LEVEL
+  const remainingPercentage = Math.max(0, 100 - Math.round((tokenUsage / MAXIMUM_TOKENS) * 100))
 
   return (
     <Box flexDirection="row">
-      <Text color={isError ? theme.error : theme.warning}>
+      <Text color={isCritical ? currentTheme.error : currentTheme.warning}>
         Context low (
-        {Math.max(0, 100 - Math.round((tokenUsage / MAX_TOKENS) * 100))}%
+        {remainingPercentage}%
         remaining) &middot; Run /compact to compact & continue
       </Text>
     </Box>

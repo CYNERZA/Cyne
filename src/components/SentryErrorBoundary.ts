@@ -1,26 +1,26 @@
 import * as React from 'react'
 import { captureException } from '../services/sentry'
 
-interface Props {
+interface ErrorHandlerProps {
   children: React.ReactNode
 }
 
-interface State {
+interface ErrorHandlerState {
   hasError: boolean
 }
 
-export class SentryErrorBoundary extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props)
+export class SentryErrorBoundary extends React.Component<ErrorHandlerProps, ErrorHandlerState> {
+  constructor(componentProps: ErrorHandlerProps) {
+    super(componentProps)
     this.state = { hasError: false }
   }
 
-  static getDerivedStateFromError(): State {
+  static getDerivedStateFromError(): ErrorHandlerState {
     return { hasError: true }
   }
 
-  componentDidCatch(error: Error): void {
-    captureException(error)
+  componentDidCatch(thrownError: Error): void {
+    captureException(thrownError)
   }
 
   render(): React.ReactNode {
