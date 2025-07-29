@@ -350,6 +350,7 @@ ${commandList}`,
       () => true,
     )
     .option('-e, --enable-architect', 'Enable the Architect tool', () => true)
+    .option('--think', 'Enable the Think tool for reasoning', () => true)
     .option(
       '-p, --print',
       'Print response and exit (useful for pipes)',
@@ -368,16 +369,24 @@ ${commandList}`,
           debug,
           verbose,
           enableArchitect,
+          think,
           print,
           dangerouslySkipPermissions,
         },
       ) => {
         await cynerShowSetupScreens(dangerouslySkipPermissions, print)
+        
+        // Set THINK_TOOL environment variable if --think flag is used
+        if (think) {
+          process.env.THINK_TOOL = 'true'
+        }
+        
         logEvent('cyner_init', {
           entrypoint: PRODUCT_COMMAND,
           hasInitialPrompt: Boolean(prompt).toString(),
           hasStdin: Boolean(stdinContent).toString(),
           enableArchitect: enableArchitect?.toString() ?? 'false',
+          think: think?.toString() ?? 'false',
           verbose: verbose?.toString() ?? 'false',
           debug: debug?.toString() ?? 'false',
           print: print?.toString() ?? 'false',

@@ -15,6 +15,10 @@ interface ToolExecutionBlock {
   name: string
   input: any
 }
+
+// Add type alias for backward compatibility
+type ToolUseBlock = ToolExecutionBlock
+
 import { UUID } from 'crypto'
 import type { Tool, ToolUseContext } from './Tool'
 import {
@@ -401,7 +405,6 @@ async function* checkPermissionsAndCallTool(
   if (!isValidInput.success) {
     logEvent('tengu_tool_use_error', {
       error: `InputValidationError: ${isValidInput.error.message}`,
-      messageID: assistantMessage.message.id,
       toolName: tool.name,
       toolInput: JSON.stringify(input).slice(0, 200),
     })
@@ -421,12 +424,10 @@ async function* checkPermissionsAndCallTool(
   // Validate input values. Each tool has its own validation logic
   const isValidCall = await tool.validateInput?.(
     normalizedInput as never,
-    context,
   )
   if (isValidCall?.result === false) {
     logEvent('tengu_tool_use_error', {
       error: isValidCall?.message.slice(0, 2000),
-      messageID: assistantMessage.message.id,
       toolName: tool.name,
       toolInput: JSON.stringify(input).slice(0, 200),
       ...(isValidCall?.meta ?? {}),
@@ -461,12 +462,11 @@ async function* checkPermissionsAndCallTool(
 
   // Call the tool
   try {
-    const generator = tool.call(normalizedInput as never, context, canUseTool)
+    const generator = tool.call(normalizedInput as never, context)
     for await (const result of generator) {
       switch (result.type) {
         case 'result':
           logEvent('tengu_tool_use_success', {
-            messageID: assistantMessage.message.id,
             toolName: tool.name,
           })
           yield createUserMessage(
@@ -485,7 +485,6 @@ async function* checkPermissionsAndCallTool(
           return
         case 'progress':
           logEvent('tengu_tool_use_progress', {
-            messageID: assistantMessage.message.id,
             toolName: tool.name,
           })
           yield createProgressMessage(
@@ -502,7 +501,6 @@ async function* checkPermissionsAndCallTool(
     logError(error)
     logEvent('tengu_tool_use_error', {
       error: content.slice(0, 2000),
-      messageID: assistantMessage.message.id,
       toolName: tool.name,
       toolInput: JSON.stringify(input).slice(0, 1000),
     })
