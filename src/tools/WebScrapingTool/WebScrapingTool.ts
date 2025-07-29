@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { z } from 'zod'
+import { Text, Box } from 'ink'
 import { Tool, ValidationResult } from '../../Tool.js'
 import { 
   TOOL_NAME, 
@@ -10,6 +11,7 @@ import {
 import { 
   performWebScraping, 
   formatScrapedContent, 
+  formatScrapedContentForUI,
   renderMarkdownContent,
   isValidUrl,
   sanitizeUrl,
@@ -182,6 +184,57 @@ export const WebScrapingTool: Tool<WebScrapingInput, WebScrapingOutput> = {
       'div', 
       {}, 
       `Web scraping rejected for URL: "${input?.url || 'unknown'}"`
+    )
+  },
+  
+  renderToolResultMessage(content: WebScrapingOutput, options: { verbose: boolean }): React.ReactNode {
+    if (!content.success) {
+      return React.createElement(
+        Box,
+        { flexDirection: 'column' },
+        React.createElement(
+          Text,
+          { color: 'red' },
+          `❌ Scraping failed: ${content.error}`
+        )
+      )
+    }
+    
+    if (!content.data) {
+      return React.createElement(
+        Box,
+        { flexDirection: 'column' },
+        React.createElement(
+          Text,
+          { color: 'yellow' },
+          `⚠️ No content found for ${content.url}`
+        )
+      )
+    }
+    
+    // Format the scraped content for UI display (without metadata)
+    const uiContent = formatScrapedContentForUI(content.data, content.formats)
+    
+    // Always truncate for better UI experience, regardless of verbose setting
+    let displayContent = uiContent
+    const lines = uiContent.split('\n').filter(line => line.trim() !== '') // Remove empty lines
+    const maxLines = 5 // Show first 5 lines
+    if (lines.length > maxLines) {
+      const truncatedLines = lines.slice(0, maxLines)
+      const remainingLines = lines.length - maxLines
+      displayContent = truncatedLines.join('\n') + `\n.......[${remainingLines}+] lines`
+    } else {
+      displayContent = lines.join('\n')
+    }
+    
+    return React.createElement(
+      Box,
+      { flexDirection: 'column' },
+      React.createElement(
+        Text,
+        {},
+        displayContent
+      )
     )
   }
 }

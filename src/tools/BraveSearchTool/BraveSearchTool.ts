@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { z } from 'zod'
+import { Text } from 'ink'
 import { Tool, ValidationResult } from '../../Tool.js'
 import { 
   TOOL_NAME, 
@@ -161,5 +162,49 @@ export const BraveSearchTool: Tool<BraveSearchInput, BraveSearchOutput> = {
   
   renderToolUseRejectedMessage(input?: BraveSearchInput): React.ReactNode {
     return React.createElement('div', {}, `Web search rejected for query: "${input?.query || 'unknown'}"`)
+  },
+  
+  renderToolResultMessage(content: BraveSearchOutput, options: { verbose: boolean }): React.ReactNode {
+    if (!content.success) {
+      return React.createElement(
+        Text,
+        { color: 'red' },
+        `❌ Search failed: ${content.error}`
+      )
+    }
+    
+    const hasResults = content.results && (
+      (content.results.web_results && content.results.web_results.length > 0) ||
+      (content.results.faq_results && content.results.faq_results.length > 0)
+    )
+    
+    if (!hasResults) {
+      return React.createElement(
+        Text,
+        { color: 'yellow' },
+        `⚠️ No results found for "${content.query}"`
+      )
+    }
+    
+    // Format the search results for display
+    const formattedResults = createSearchResultOutput(content)
+    
+    // If verbose mode is off and content is too long, truncate it
+    let displayContent = formattedResults
+    if (!options.verbose) {
+      const lines = formattedResults.split('\n')
+      const maxLines = 20 // Show first 20 lines
+      if (lines.length > maxLines) {
+        const truncatedLines = lines.slice(0, maxLines)
+        const remainingLines = lines.length - maxLines
+        displayContent = truncatedLines.join('\n') + `\n.......[${remainingLines}+] lines`
+      }
+    }
+    
+    return React.createElement(
+      Text,
+      {},
+      displayContent
+    )
   }
 }

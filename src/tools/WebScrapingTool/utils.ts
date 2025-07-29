@@ -118,6 +118,61 @@ export function formatScrapedContent(
   return output
 }
 
+export function formatScrapedContentForUI(
+  scrapedData: ScrapedData, 
+  formats: readonly string[] | string[]
+): string {
+  let output = ''
+
+  // Add only the content without metadata for UI display
+  formats.forEach(format => {
+    const content = scrapedData[format as keyof ScrapedData]
+    if (content && typeof content === 'string') {
+      if (format === 'markdown') {
+        // Strip markdown formatting for cleaner display
+        const plainText = content
+          // Remove headers (# ## ###)
+          .replace(/^#{1,6}\s+(.+)$/gm, '$1')
+          // Remove bold (**text**)
+          .replace(/\*\*(.+?)\*\*/g, '$1')
+          // Remove italic (*text*)
+          .replace(/\*(.+?)\*/g, '$1')
+          // Remove links [text](url)
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+          // Remove images ![alt](url)
+          .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+          // Remove code blocks ```
+          .replace(/```[\s\S]*?```/g, (match) => {
+            const lines = match.split('\n')
+            return lines.slice(1, -1).join('\n')
+          })
+          // Remove inline code `text`
+          .replace(/`([^`]+)`/g, '$1')
+          // Clean up multiple newlines
+          .replace(/\n{3,}/g, '\n\n')
+          .trim()
+        
+        output += plainText
+      } else if (format === 'html') {
+        // Truncate HTML if too long for readability
+        const truncatedHtml = content.length > 2000 
+          ? content.substring(0, 2000) + '\n...\n[Content truncated for readability]'
+          : content
+        output += `\`\`\`html\n${truncatedHtml}\n\`\`\``
+      } else if (format === 'text') {
+        output += content
+      }
+      
+      if (formats.length > 1) output += '\n\n'
+    } else if (content && format === 'structured') {
+      output += `\`\`\`json\n${JSON.stringify(content, null, 2)}\n\`\`\``
+      if (formats.length > 1) output += '\n\n'
+    }
+  })
+
+  return output.trim()
+}
+
 export function isValidUrl(url: string): boolean {
   try {
     new URL(url)
