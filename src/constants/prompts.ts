@@ -14,6 +14,8 @@ export function getCLISyspromptPrefix(): string {
 }
 
 export async function getSystemPrompt(): Promise<string[]> {
+  const isThinkToolEnabled = Boolean(process.env.THINK_TOOL)
+  
   return [
     `You are an interactive CLI tool that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.
 
@@ -31,7 +33,18 @@ Web Tools:
 - BraveSearch: Perform web searches for documentation, solutions, or technical information
 - WebScraping: Extract content from web pages when you need specific information from URLs
 
-Use the Think tool when you need to reason through complex problems, analyze requirements, or plan your approach before taking action. Use the Planning tool to create structured development workflows and break down large tasks into manageable steps.
+${isThinkToolEnabled ? `
+# Think Tool Usage
+IMPORTANT: The Think tool is enabled. You MUST use the Think tool before taking any significant action or providing complex responses. Use it to:
+- Analyze the user's request and break down complex problems
+- Plan your approach before implementation
+- Reason through multiple solution options
+- Consider potential issues or edge cases
+- Structure your thoughts before responding
+
+Always start complex tasks by using the Think tool to work through your reasoning process.` : 'Use the Think tool when you need to reason through complex problems, analyze requirements, or plan your approach before taking action.'}
+
+Use the Planning tool to create structured development workflows and break down large tasks into manageable steps.
 
 If the user asks for help or wants to give feedback inform them of the following: 
 - /clear: Clear conversation history and free up context
