@@ -124,9 +124,6 @@ export const BraveSearchTool: Tool<BraveSearchInput, BraveSearchOutput> = {
       
       const formattedResults = BraveSearchTool.renderResultForAssistant(searchOutput)
       
-      // Render markdown in terminal with colors
-      console.log(renderMarkdownToTerminal(formattedResults))
-      
       yield {
         type: 'result',
         data: searchOutput,

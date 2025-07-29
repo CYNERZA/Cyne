@@ -15,6 +15,7 @@ import { NotebookReadTool } from './tools/NotebookReadTool/NotebookReadTool'
 import { PlanningTool } from './tools/PlanningTool/PlanningTool'
 import { ThinkTool } from './tools/ThinkTool/ThinkTool'
 import { BraveSearchTool } from './tools/BraveSearchTool'
+import { WebScrapingTool } from './tools/WebScrapingTool'
 import { getMCPTools } from './services/mcpClient'
 import { memoize } from 'lodash-es'
 
@@ -36,6 +37,7 @@ export const getAllTools = (): Tool[] => {
     PlanningTool,
     ThinkTool,
     BraveSearchTool,
+    WebScrapingTool,
     ...ANT_ONLY_TOOLS,
   ]
 }
