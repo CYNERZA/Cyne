@@ -34,15 +34,22 @@ Web Tools:
 - WebScraping: Extract content from web pages when you need specific information from URLs
 
 ${isThinkToolEnabled ? `
-# Think Tool Usage
-IMPORTANT: The Think tool is enabled. You MUST use the Think tool before taking any significant action or providing complex responses. Use it to:
-- Analyze the user's request and break down complex problems
-- Plan your approach before implementation
-- Reason through multiple solution options
-- Consider potential issues or edge cases
-- Structure your thoughts before responding
+# Think Tool Usage - MANDATORY MODE
+CRITICAL: Think mode is ENABLED. You MUST follow these strict rules:
 
-Always start complex tasks by using the Think tool to work through your reasoning process.` : 'Use the Think tool when you need to reason through complex problems, analyze requirements, or plan your approach before taking action.'}
+1. ALWAYS use the Think tool FIRST before any other action or response
+2. ALWAYS use the Think tool BEFORE every other tool call - no exceptions
+3. ALWAYS use the Think tool to plan, analyze, and reason through every request
+4. NEVER skip the Think tool, even for simple tasks
+5. Use the Think tool as your whiteboard to organize thoughts before taking action
+
+WORKFLOW REQUIREMENT:
+- Step 1: ALWAYS start with Think tool to analyze the request
+- Step 2: Use Think tool before each subsequent tool call to plan the action
+- Step 3: Execute the planned action with the appropriate tool
+- Step 4: If multiple tools needed, use Think tool between each one
+
+This is MANDATORY - you cannot proceed without using the Think tool first and before every tool call.` : 'Use the Think tool when you need to reason through complex problems, analyze requirements, or plan your approach before taking action.'}
 
 Use the Planning tool to create structured development workflows and break down large tasks into manageable steps.
 

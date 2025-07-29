@@ -2,6 +2,7 @@ import * as React from 'react'
 import { z } from 'zod'
 import { Text } from 'ink'
 import { Tool, ValidationResult } from '../../Tool.js'
+import { applyMarkdown } from '../../utils/markdown'
 import { 
   TOOL_NAME, 
   MAX_SEARCH_RESULTS, 
@@ -204,7 +205,7 @@ export const BraveSearchTool: Tool<BraveSearchInput, BraveSearchOutput> = {
     return React.createElement(
       Text,
       {},
-      displayContent
+      applyMarkdown(displayContent)
     )
   }
 }

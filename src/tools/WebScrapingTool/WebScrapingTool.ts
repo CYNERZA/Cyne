@@ -2,6 +2,7 @@ import * as React from 'react'
 import { z } from 'zod'
 import { Text, Box } from 'ink'
 import { Tool, ValidationResult } from '../../Tool.js'
+import { applyMarkdown } from '../../utils/markdown'
 import { 
   TOOL_NAME, 
   PROMPT,
@@ -233,7 +234,7 @@ export const WebScrapingTool: Tool<WebScrapingInput, WebScrapingOutput> = {
       React.createElement(
         Text,
         {},
-        displayContent
+        applyMarkdown(displayContent)
       )
     )
   }
