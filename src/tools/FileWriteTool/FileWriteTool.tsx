@@ -9,7 +9,7 @@ import { FileEditToolUpdatedMessage } from '../../components/FileEditToolUpdated
 import { HighlightedCode } from '../../components/HighlightedCode'
 import { StructuredDiff } from '../../components/StructuredDiff'
 import { logEvent } from '../../services/statsig'
-import type { Tool } from '../../Tool'
+import type { Tool, ToolUseContext } from '../../Tool'
 import { intersperse } from '../../utils/array'
 import {
   addLineNumbers,
@@ -39,6 +39,8 @@ const inputSchema = z.strictObject({
     ),
   content: z.string().describe('The content to write to the file'),
 })
+
+type FileWriteInput = z.infer<typeof inputSchema>
 
 export const FileWriteTool = {
   name: 'Replace',
@@ -163,42 +165,43 @@ export const FileWriteTool = {
         )
     }
   },
-  async validateInput({ file_path }, { readFileTimestamps }) {
+  async validateInput({ file_path }: FileWriteInput) {
     const fullFilePath = isAbsolute(file_path)
       ? file_path
       : resolve(getCwd(), file_path)
-    if (!existsSync(fullFilePath)) {
-      return { result: true }
-    }
-
-    const readTimestamp = readFileTimestamps[fullFilePath]
-    if (!readTimestamp) {
+    
+    // Basic validation - file path should be absolute
+    if (!isAbsolute(file_path)) {
       return {
         result: false,
-        message:
-          'File has not been read yet. Read it first before writing to it.',
+        message: 'File path must be absolute, not relative.',
       }
     }
 
-    // Check if file exists and get its last modified time
-    const stats = statSync(fullFilePath)
-    const lastWriteTime = stats.mtimeMs
-    if (lastWriteTime > readTimestamp) {
-      return {
-        result: false,
-        message:
-          'File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.',
-      }
-    }
-
-    return { result: true }
+    return { result: true, message: 'Valid file path' }
   },
-  async *call({ file_path, content }, { readFileTimestamps }) {
+  async *call({ file_path, content }: FileWriteInput, { readFileTimestamps }: ToolUseContext) {
     const fullFilePath = isAbsolute(file_path)
       ? file_path
       : resolve(getCwd(), file_path)
     const dir = dirname(fullFilePath)
     const oldFileExists = existsSync(fullFilePath)
+    
+    // Check file timestamps if file exists
+    if (oldFileExists) {
+      const readTimestamp = readFileTimestamps[fullFilePath]
+      if (!readTimestamp) {
+        throw new Error('File has not been read yet. Read it first before writing to it.')
+      }
+
+      // Check if file exists and get its last modified time
+      const stats = statSync(fullFilePath)
+      const lastWriteTime = stats.mtimeMs
+      if (lastWriteTime > readTimestamp) {
+        throw new Error('File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.')
+      }
+    }
+    
     const enc = oldFileExists ? detectFileEncoding(fullFilePath) : 'utf-8'
     const oldContent = oldFileExists ? readFileSync(fullFilePath, enc) : null
 
@@ -236,7 +239,7 @@ export const FileWriteTool = {
         data,
         resultForAssistant: this.renderResultForAssistant(data),
       }
-      return
+      return data
     }
 
     const data = {
@@ -250,6 +253,7 @@ export const FileWriteTool = {
       data,
       resultForAssistant: this.renderResultForAssistant(data),
     }
+    return data
   },
   renderResultForAssistant({ filePath, content, type }) {
     switch (type) {
@@ -270,7 +274,7 @@ ${addLineNumbers({
     }
   },
 } satisfies Tool<
-  typeof inputSchema,
+  FileWriteInput,
   {
     type: 'create' | 'update'
     filePath: string
