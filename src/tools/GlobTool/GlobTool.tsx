@@ -100,6 +100,7 @@ export const GlobTool = {
       resultForAssistant: this.renderResultForAssistant(output),
       data: output,
     }
+    return output
   },
   renderResultForAssistant(output) {
     let result = output.filenames.join('\n')

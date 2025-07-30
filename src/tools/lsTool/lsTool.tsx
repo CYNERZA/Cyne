@@ -111,6 +111,7 @@ export const LSTool = {
         data: userTree, // Show user the tree without the warning
         resultForAssistant: this.renderResultForAssistant(assistantTree), // Send warning only to assistant
       }
+      return userTree
     } else {
       const userData = `${TRUNCATED_MESSAGE}${userTree}`
       const assistantData = `${TRUNCATED_MESSAGE}${assistantTree}`
@@ -119,6 +120,7 @@ export const LSTool = {
         data: userData, // Show user the truncated tree without the warning
         resultForAssistant: this.renderResultForAssistant(assistantData), // Send warning only to assistant
       }
+      return userData
     }
   },
 } satisfies Tool<typeof inputSchema, string>

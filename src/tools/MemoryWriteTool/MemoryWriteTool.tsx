@@ -72,5 +72,6 @@ export const MemoryWriteTool = {
       data: 'Saved',
       resultForAssistant: 'Saved',
     }
+    return 'Saved'
   },
 } satisfies Tool<typeof inputSchema, string>

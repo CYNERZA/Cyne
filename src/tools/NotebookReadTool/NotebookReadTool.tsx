@@ -147,6 +147,7 @@ export const NotebookReadTool = {
       resultForAssistant: renderResultForAssistant(cells),
       data: cells,
     }
+    return cells
   },
   renderResultForAssistant,
 } satisfies Tool<In, Out>

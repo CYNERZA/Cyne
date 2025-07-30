@@ -36,6 +36,7 @@ export const ThinkTool = {
       resultForAssistant: 'Your thought has been logged.',
       data: { thought: input.thought },
     }
+    return { thought: input.thought }
   },
 
   // This is never called -- it's special-cased in AssistantToolUseMessage

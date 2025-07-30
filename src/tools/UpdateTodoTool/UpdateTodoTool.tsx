@@ -29,9 +29,11 @@ export const UpdateTodoTool = {
   },
 
   async *call(input) {
+    const result = `${input.task_id} → ${input.status}`
     yield {
       type: 'result',
-      content: `${input.task_id} → ${input.status}`,
+      content: result,
     }
+    return result
   },
 }

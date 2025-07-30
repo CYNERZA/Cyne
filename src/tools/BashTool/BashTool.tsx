@@ -214,5 +214,6 @@ export const BashTool = {
       resultForAssistant: this.renderResultForAssistant(data),
       data,
     }
+    return data
   },
 } satisfies Tool

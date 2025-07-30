@@ -255,6 +255,7 @@ export const FileEditTool = {
       data,
       resultForAssistant: this.renderResultForAssistant(data),
     }
+    return data
   },
   renderResultForAssistant({ filePath, originalFile, oldString, newString }) {
     const { snippet, startLine } = getSnippet(

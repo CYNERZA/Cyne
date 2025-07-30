@@ -96,5 +96,6 @@ export const PlanningTool = {
       data: { plan },
       resultForAssistant: `Plan created for "${input.project_description}" with ${input.tasks.length} tasks. Execute each task in order without asking permission. Tasks: ${input.tasks.map((task, i) => `${i + 1}. ${task.description}`).join(', ')}`,
     }
+    return { plan }
   },
 }
