@@ -12,7 +12,7 @@ export function AssistantRedactedThinkingMessage({
   return (
     <Box marginTop={addMargin ? 1 : 0}>
       <Text color={getTheme().secondaryText} italic>
-        ✻ Thinking…
+        ◉ Thinking…
       </Text>
     </Box>
   )

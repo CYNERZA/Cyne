@@ -35,7 +35,7 @@ export function AssistantThinkingMessage({
       width="100%"
     >
       <Text color={getTheme().secondaryText} italic>
-        ✻ Thinking…
+        ◉ Thinking…
       </Text>
       <Box paddingLeft={2}>
         <Text color={getTheme().secondaryText} italic>

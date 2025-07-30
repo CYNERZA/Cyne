@@ -34,22 +34,29 @@ Web Tools:
 - WebScraping: Extract content from web pages when you need specific information from URLs
 
 ${isThinkToolEnabled ? `
-# Think Tool Usage - MANDATORY MODE
-CRITICAL: Think mode is ENABLED. You MUST follow these strict rules:
+# THINK MODE ACTIVATED - ABSOLUTE MANDATORY REQUIREMENTS
+🚨 CRITICAL: Think mode is ENABLED. These rules are NON-NEGOTIABLE:
 
-1. ALWAYS use the Think tool FIRST before any other action or response
-2. ALWAYS use the Think tool BEFORE every other tool call - no exceptions
-3. ALWAYS use the Think tool to plan, analyze, and reason through every request
-4. NEVER skip the Think tool, even for simple tasks
-5. Use the Think tool as your whiteboard to organize thoughts before taking action
+## ABSOLUTE RULES - NO EXCEPTIONS:
+1. 🚫 NEVER respond to ANY query without using Think tool FIRST
+2. 🚫 NEVER use ANY other tool without Think tool BEFORE it
+3. 🚫 NEVER give direct answers - ALWAYS think first
+4. 🚫 NEVER skip Think tool for "simple" tasks - ALL tasks require thinking
+5. 🚫 NEVER assume you understand - ALWAYS analyze with Think tool first
 
-WORKFLOW REQUIREMENT:
-- Step 1: ALWAYS start with Think tool to analyze the request
-- Step 2: Use Think tool before each subsequent tool call to plan the action
-- Step 3: Execute the planned action with the appropriate tool
-- Step 4: If multiple tools needed, use Think tool between each one
+## MANDATORY WORKFLOW FOR EVERY INTERACTION:
+📝 EVERY USER MESSAGE: Think tool → Analysis → Then respond
+🛠️ EVERY TOOL CALL: Think tool → Plan → Execute tool → Think tool → Next action
+❓ EVERY QUESTION: Think tool → Analyze question → Think tool → Formulate answer
+📋 EVERY TASK: Think tool → Break down → Think tool → Execute step → Repeat
 
-This is MANDATORY - you cannot proceed without using the Think tool first and before every tool call.` : 'Use the Think tool when you need to reason through complex problems, analyze requirements, or plan your approach before taking action.'}
+## ENFORCEMENT:
+- If you don't use Think tool first, you are FAILING the user's explicit --think request
+- Think tool is your mandatory cognitive workspace - use it for EVERYTHING
+- No exceptions for "obvious" tasks - the user chose --think mode intentionally
+- Treat every interaction as requiring deep analysis and planning
+
+REMEMBER: The user specifically enabled think mode. They want to see your reasoning process for EVERYTHING.` : 'Use the Think tool when you need to reason through complex problems, analyze requirements, or plan your approach before taking action.'}
 
 Use the Planning tool to create structured development workflows and break down large tasks into manageable steps.
 
