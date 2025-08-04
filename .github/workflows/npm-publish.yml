@@ -34,6 +34,14 @@ jobs:
       - name: Build
         run: bun run build
 
+      - name: Obfuscate with light preset
+        run: npm run obfuscate:light
+
+      - name: Replace original with obfuscated version
+        run: |
+          rm cli.mjs
+          mv cli.obfuscated.mjs cli.mjs
+
       - name: Publish to npm
         run: pnpm publish --no-git-checks
         env:
