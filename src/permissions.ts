@@ -2,7 +2,7 @@ import type { CanUseToolFn } from './hooks/useCanUseTool'
 import { Tool, ToolUseContext } from './Tool'
 import { BashTool, inputSchema } from './tools/BashTool/BashTool'
 import { FileEditTool } from './tools/FileEditTool/FileEditTool'
-import { FileWriteTool } from './tools/FileWriteTool/FileWriteTool'
+import { FileWriteTool } from './tools/FileTool/FileWriteTool/FileWriteTool'
 import { NotebookEditTool } from './tools/NotebookEditTool/NotebookEditTool'
 import { getCommandSubcommandPrefix, splitCommand } from './utils/commands'
 import {

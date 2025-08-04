@@ -7,7 +7,7 @@ import {
 } from '../../utils/messages.js'
 import type { Tool } from '../../Tool'
 import { useTerminalSize } from '../../hooks/useTerminalSize'
-import { FileWriteTool } from '../../tools/FileWriteTool/FileWriteTool'
+import { FileWriteTool } from '../../tools/FileTool/FileWriteTool/FileWriteTool'
 import { FileWriteToolDiff } from '../permissions/FileWritePermissionRequest/FileWriteToolDiff'
 import type { AssistantMessage } from '../../query'
 import * as React from 'react'

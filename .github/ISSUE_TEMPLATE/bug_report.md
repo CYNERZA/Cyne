@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 ## Bug Description
-<!-- NOTE: from v0.0.18, you can submit a bug from the app by typing /bug, it'll open a window to github issue create, with the model info pre-filled -->
+<!-- NOTE: from v0.0.19, you can submit a bug from the app by typing /bug, it'll open a window to github issue create, with the model info pre-filled -->
 
 
 ## App and Environment Info

@@ -9,20 +9,20 @@ import * as path from 'path'
 import { extname, relative } from 'path'
 import * as React from 'react'
 import { z } from 'zod'
-import { FallbackToolUseRejectedMessage } from '../../components/FallbackToolUseRejectedMessage'
-import { HighlightedCode } from '../../components/HighlightedCode'
-import type { Tool } from '../../Tool'
-import { getCwd } from '../../utils/state'
+import { FallbackToolUseRejectedMessage } from '../../../components/FallbackToolUseRejectedMessage'
+import { HighlightedCode } from '../../../components/HighlightedCode'
+import type { Tool } from '../../../Tool'
+import { getCwd } from '../../../utils/state'
 import {
   addLineNumbers,
   findSimilarFile,
   normalizeFilePath,
   readTextContent,
-} from '../../utils/file.js'
-import { logError } from '../../utils/log'
-import { getTheme } from '../../utils/theme'
+} from '../../../utils/file.js'
+import { logError } from '../../../utils/log'
+import { getTheme } from '../../../utils/theme'
 import { DESCRIPTION, PROMPT } from './prompt'
-import { hasReadPermission } from '../../utils/permissions/filesystem'
+import { hasReadPermission } from '../../../utils/permissions/filesystem'
 
 const MAX_LINES_TO_RENDER = 3
 const MAX_OUTPUT_SIZE = 0.25 * 1024 * 1024 // 0.25MB in bytes

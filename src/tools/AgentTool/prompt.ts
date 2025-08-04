@@ -2,11 +2,11 @@ import { type Tool } from '../../Tool'
 import { getTools, getReadOnlyTools } from '../../tools'
 import { AgentTool } from '../AgentTool/AgentTool'
 import { BashTool } from '../BashTool/BashTool'
-import { FileWriteTool } from '../FileWriteTool/FileWriteTool'
+import { FileWriteTool } from '../FileTool/FileWriteTool/FileWriteTool'
 import { FileEditTool } from '../FileEditTool/FileEditTool'
 import { NotebookEditTool } from '../NotebookEditTool/NotebookEditTool'
 import { GlobTool } from '../GlobTool/GlobTool'
-import { FileReadTool } from '../FileReadTool/FileReadTool'
+import { FileReadTool } from '../FileTool/FileReadTool/FileReadTool'
 
 export async function getAgentTools(
   dangerouslySkipPermissions: boolean,
