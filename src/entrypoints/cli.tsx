@@ -289,6 +289,17 @@ async function cynerMain() {
     }
   }
 
+  // Check authentication - required for all operations except login/logout
+  const isLoginCommand = process.argv.includes('--login')
+  const isLogoutCommand = process.argv.includes('--logout')
+  
+  if (!isLoginCommand && !isLogoutCommand && !AuthService.isAuthenticated()) {
+    console.error('\n❌ Authentication required')
+    console.error('\nPlease login to use Cyne CLI:')
+    console.error('  cyne --login\n')
+    process.exit(1)
+  }
+
   // Initialize telemetry if authenticated
   if (AuthService.isAuthenticated()) {
     await TelemetryClient.init()
