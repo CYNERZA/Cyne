@@ -32,7 +32,7 @@ export class TelemetryClient {
   private static instance: TelemetryClient | null = null
   private static sessionId: string = randomUUID()
   private static userId: string | null = null
-  private static cliVersion: string = process.env.npm_package_version || '0.0.13-beta'
+  private static cliVersion: string = process.env.npm_package_version || '0.0.14-beta'
   private static queuePath = join(homedir(), '.cyne', 'telemetry_queue.json')
   private static eventQueue: QueuedEvent[] = []
   private static maxBatchSize = 10

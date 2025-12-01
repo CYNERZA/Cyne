@@ -294,10 +294,18 @@ async function cynerMain() {
   const isLogoutCommand = process.argv.includes('--logout')
   
   if (!isLoginCommand && !isLogoutCommand && !AuthService.isAuthenticated()) {
-    console.error('\n❌ Authentication required')
-    console.error('\nPlease login to use Cyne CLI:')
-    console.error('  cyne --login\n')
-    process.exit(1)
+    // Directly render login page instead of showing error
+    await clearTerminal()
+    await new Promise<void>(resolve => {
+      render(
+        <Login
+          onComplete={async () => {
+            await clearTerminal()
+            resolve()
+          }}
+        />
+      )
+    })
   }
 
   // Initialize telemetry if authenticated
