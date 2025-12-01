@@ -8,19 +8,21 @@
 const fs = require('fs');
 const path = require('path');
 
-console.log('Patching ansi-styles compatibility issues...');
+// Exit gracefully if running in global install context
+try {
+  console.log('Patching ansi-styles compatibility issues...');
 
-// Patch 1: slice-ansi
-const sliceAnsiPath = path.join(
-  __dirname,
-  '..',
-  'node_modules',
-  '.pnpm',
-  'slice-ansi@7.1.2',
-  'node_modules',
-  'slice-ansi',
-  'index.js'
-);
+  // Patch 1: slice-ansi
+  const sliceAnsiPath = path.join(
+    __dirname,
+    '..',
+    'node_modules',
+    '.pnpm',
+    'slice-ansi@7.1.2',
+    'node_modules',
+    'slice-ansi',
+    'index.js'
+  );
 
 if (fs.existsSync(sliceAnsiPath)) {
   let content = fs.readFileSync(sliceAnsiPath, 'utf8');
@@ -96,3 +98,8 @@ const ansiCode = (code) => \`\\x1B[\${code}m\`;`
 }
 
 console.log('Patch complete!');
+
+} catch (error) {
+  console.log('⚠ Patching skipped (this is OK for global installs):', error.message);
+  process.exit(0); // Exit successfully even if patching fails
+}

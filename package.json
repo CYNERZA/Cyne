@@ -1,6 +1,6 @@
 {
-  "name": "cyne",
-  "version": "0.0.9-beta",
+  "name": "cyne-cli",
+  "version": "0.0.12-beta",
   "bin": {
     "cyne": "cli.mjs",
     "cyne.cmd": "cyne.cmd"
@@ -24,6 +24,8 @@
     "cli.mjs",
     "cyne.cmd",
     "yoga.wasm",
+    "scripts/patch-slice-ansi.cjs",
+    "scripts/patch-ansi-styles.cjs",
     "scripts/install-windows.ps1",
     "scripts/uninstall-windows.ps1",
     "OBFUSCATION.md"

@@ -95,7 +95,7 @@ export function AnimatedLogo({
       </Box>
       {showVersion && revealed && (
         <Box marginTop={1}>
-          <Text dimColor>AI Development Suite v0.0.23</Text>
+          <Text dimColor>AI Development Suite v0.0.12-beta</Text>
         </Box>
       )}
       {state === 'active' && revealed && (
