@@ -317,8 +317,8 @@ async function cynerMain() {
       const { syncConfigFromBackend } = await import('../utils/config')
       await syncConfigFromBackend()
     } catch (error) {
-      // Fail gracefully - backend might be down
-      console.error('Warning: Failed to sync config from backend', error)
+      // Sync errors are handled gracefully in syncConfigFromBackend
+      // No need to log here as errors are already logged there
     }
   }
 

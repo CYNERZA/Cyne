@@ -712,7 +712,9 @@ export async function syncConfigFromBackend(): Promise<void> {
   const { BackendClient } = await import('../services/backend')
   const { AuthService } = await import('../services/auth')
   
+  // Check if user is authenticated before making any API calls
   if (!AuthService.isAuthenticated()) {
+    // Silently return - user will be prompted to login by the CLI
     return
   }
   
@@ -759,9 +761,20 @@ export async function syncConfigFromBackend(): Promise<void> {
         ? fullConfig.provider 
         : `default_${fullConfig.provider}`,
     })
-  } catch (error) {
-    // Fail gracefully - don't block if backend is down
-    console.error('Failed to sync config from backend:', error)
+  } catch (error: any) {
+    // Check if this is an authentication error
+    if (error?.message?.includes('Unauthorized') || error?.message?.includes('401')) {
+      // Clear the invalid token
+      AuthService.clearToken()
+      const { clearMemoryCredentials } = await import('./memoryConfig')
+      clearMemoryCredentials()
+
+      // Don't throw - this will be handled by the login prompt in main CLI
+      return
+    }
+    
+    // For other errors, fail gracefully - don't block if backend is down or has issues
+    // The error is logged but we don't prevent the CLI from starting
     logError(error)
   }
 }
