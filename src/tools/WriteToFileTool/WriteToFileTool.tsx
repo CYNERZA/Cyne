@@ -11,9 +11,9 @@ import { hasWritePermission } from '../../utils/permissions/filesystem'
 
 const inputSchema = z.strictObject({
   TargetFile: z.string().describe('The target file to create and write code to.'),
-  Overwrite: z.boolean().describe('Set this to true to overwrite an existing file. WARNING: This will replace the entire file contents. Only use when you explicitly intend to overwrite.'),
+  Overwrite: z.boolean().default(false).describe('Set this to true to overwrite an existing file. WARNING: This will replace the entire file contents. Only use when you explicitly intend to overwrite.'),
   CodeContent: z.string().describe('The code contents to write to the file.'),
-  EmptyFile: z.boolean().describe('Set this to true to create an empty file.'),
+  EmptyFile: z.boolean().default(false).describe('Set this to true to create an empty file.'),
   Description: z.string().describe('Brief, user-facing explanation of what this change did.'),
   Complexity: z.number().describe('A 1-10 rating of how important it is for the user to review this change.'),
   IsArtifact: z.boolean().describe('Set this to true when creating an artifact file.'),
