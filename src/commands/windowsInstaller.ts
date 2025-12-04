@@ -2,13 +2,148 @@ import { Command } from '../commands'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { join } from 'path'
-import { existsSync } from 'fs'
+import { existsSync, mkdirSync, writeFileSync, createWriteStream, unlinkSync } from 'fs'
 import chalk from 'chalk'
 import { WindowsPathManager } from '../utils/windowsPath'
 import { logEvent } from '../services/statsig'
 import { logError } from '../utils/log'
+import https from 'https'
 
 const execAsync = promisify(exec)
+
+/**
+ * Download a file from a URL to a local path
+ */
+async function downloadFile(url: string, destPath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const file = createWriteStream(destPath)
+    
+    const makeRequest = (requestUrl: string) => {
+      https.get(requestUrl, (response) => {
+        // Handle redirects
+        if (response.statusCode === 301 || response.statusCode === 302) {
+          const redirectUrl = response.headers.location
+          if (redirectUrl) {
+            file.close()
+            makeRequest(redirectUrl)
+            return
+          }
+        }
+        
+        if (response.statusCode !== 200) {
+          file.close()
+          reject(new Error(`Failed to download: HTTP ${response.statusCode}`))
+          return
+        }
+        
+        response.pipe(file)
+        file.on('finish', () => {
+          file.close()
+          resolve()
+        })
+      }).on('error', (err) => {
+        file.close()
+        reject(err)
+      })
+    }
+    
+    makeRequest(url)
+  })
+}
+
+/**
+ * Get the latest version and tarball URL from npm registry
+ */
+async function getNpmPackageInfo(): Promise<{ version: string; tarball: string }> {
+  return new Promise((resolve, reject) => {
+    https.get('https://registry.npmjs.org/cyne-cli/latest', (response) => {
+      let data = ''
+      response.on('data', (chunk) => { data += chunk })
+      response.on('end', () => {
+        try {
+          const packageInfo = JSON.parse(data)
+          resolve({
+            version: packageInfo.version,
+            tarball: packageInfo.dist.tarball
+          })
+        } catch (err) {
+          reject(new Error(`Failed to parse npm registry response: ${err}`))
+        }
+      })
+    }).on('error', reject)
+  })
+}
+
+/**
+ * Extract a .tgz file using PowerShell (Windows 10+ has built-in tar support)
+ */
+async function extractTarball(tarballPath: string, destPath: string): Promise<void> {
+  // Use PowerShell to extract the tarball - Windows 10 1803+ has built-in tar
+  const command = `tar -xzf "${tarballPath}" -C "${destPath}"`
+  await execAsync(command, { timeout: 60000 })
+}
+
+/**
+ * Perform manual installation by downloading from npm registry
+ */
+async function manualInstall(installPath: string, isSystemWide: boolean): Promise<void> {
+  console.log(chalk.blue('Fetching package information from npm registry...'))
+  
+  const packageInfo = await getNpmPackageInfo()
+  console.log(chalk.green(`Found cyne-cli version ${packageInfo.version}`))
+  
+  // Create installation directory
+  if (!existsSync(installPath)) {
+    mkdirSync(installPath, { recursive: true })
+  }
+  
+  const tarballPath = join(installPath, 'cyne.tgz')
+  
+  console.log(chalk.blue('Downloading package...'))
+  await downloadFile(packageInfo.tarball, tarballPath)
+  console.log(chalk.green('✓ Package downloaded'))
+  
+  console.log(chalk.blue('Extracting package...'))
+  await extractTarball(tarballPath, installPath)
+  console.log(chalk.green('✓ Package extracted'))
+  
+  // Create wrapper batch file that points to the extracted package
+  const batchContent = `@echo off
+setlocal
+node "%~dp0package\\cli.mjs" %*
+`
+  const batchPath = join(installPath, 'cyne.cmd')
+  writeFileSync(batchPath, batchContent, 'utf8')
+  console.log(chalk.green('✓ Created cyne.cmd wrapper'))
+  
+  // Run postinstall script if needed
+  const postinstallScript = join(installPath, 'package', 'scripts', 'patch-slice-ansi.cjs')
+  if (existsSync(postinstallScript)) {
+    console.log(chalk.blue('Running postinstall script...'))
+    try {
+      await execAsync(`node "${postinstallScript}"`, { 
+        cwd: join(installPath, 'package'),
+        timeout: 30000 
+      })
+      console.log(chalk.green('✓ Postinstall completed'))
+    } catch (postinstallError) {
+      console.log(chalk.yellow('⚠ Postinstall script failed, but installation may still work'))
+      logError(`Postinstall failed: ${postinstallError}`)
+    }
+  }
+  
+  // Clean up tarball
+  try {
+    unlinkSync(tarballPath)
+  } catch {
+    // Ignore cleanup errors
+  }
+  
+  // Add install path to PATH
+  console.log(chalk.blue(`Adding ${installPath} to PATH...`))
+  await WindowsPathManager.addToPath(installPath, isSystemWide)
+  console.log(chalk.green('✓ Added to PATH'))
+}
 
 const windowsInstaller: Command = {
   type: 'local',
@@ -76,8 +211,14 @@ const windowsInstaller: Command = {
         console.log(chalk.yellow('⚠ npm installation failed, using manual installation'))
         logError(`npm install failed: ${npmError}`)
         
-        // Manual installation logic here if needed
-        throw new Error('Manual installation not yet implemented. Please ensure npm is installed and try again.')
+        // Manual installation: download from npm registry and extract
+        try {
+          await manualInstall(installPath, isSystemWide)
+          console.log(chalk.green('✓ Manual installation completed successfully'))
+        } catch (manualError) {
+          logError(`Manual installation failed: ${manualError}`)
+          throw new Error(`Installation failed. npm error: ${npmError}. Manual installation error: ${manualError}`)
+        }
       }
 
       // Verify installation
