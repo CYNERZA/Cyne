@@ -1,0 +1,78 @@
+{
+  "name": "cyne-vscode",
+  "displayName": "Cyne - AI Coding Assistant",
+  "description": "VS Code integration for Cyne CLI - enables AI-powered code editing directly from your terminal",
+  "version": "0.1.0",
+  "publisher": "cynerza",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "ai",
+    "cyne",
+    "cynerza",
+    "coding assistant",
+    "terminal"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cyne.showStatus",
+        "title": "Cyne: Show Connection Status"
+      },
+      {
+        "command": "cyne.reconnect",
+        "title": "Cyne: Reconnect Socket"
+      },
+      {
+        "command": "cyne.acceptAllEdits",
+        "title": "Cyne: Accept All Pending Edits"
+      },
+      {
+        "command": "cyne.rejectAllEdits",
+        "title": "Cyne: Reject All Pending Edits"
+      },
+      {
+        "command": "cyne.openBrain",
+        "title": "Cyne: Open Brain Panel"
+      }
+    ],
+    "configuration": {
+      "title": "Cyne",
+      "properties": {
+        "cyne.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically start the Cyne socket server when VS Code opens"
+        },
+        "cyne.showStatusBarItem": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Cyne connection status in the status bar"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.22.0",
+    "typescript": "^5.3.0"
+  }
+}

@@ -32,8 +32,7 @@ import { SendCommandInputTool } from './tools/SendCommandInputTool/SendCommandIn
 import { ReadTerminalTool } from './tools/ReadTerminalTool/ReadTerminalTool'
 
 // New task management tools
-import { TaskBoundaryTool } from './tools/TaskBoundaryTool/TaskBoundaryTool'
-import { NotifyUserTool } from './tools/NotifyUserTool/NotifyUserTool'
+import { TaskBoundaryTool, NotifyUserTool, BrainTool } from './tools/TaskTool'
 
 const ANT_ONLY_TOOLS = [MemoryReadTool, MemoryWriteTool]
 
@@ -66,6 +65,7 @@ export const getAllTools = (): Tool[] => {
     // New task management tools
     TaskBoundaryTool,
     NotifyUserTool,
+    BrainTool,
     ...VSCODE_TOOLS,
     ...ANT_ONLY_TOOLS,
   ]

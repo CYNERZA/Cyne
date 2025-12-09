@@ -1,5 +1,9 @@
 import argparse
 
+def hello_bhai():
+    """Simple hello bhai."""
+    print("Hello, Bhai!")
+
 def main():
     parser = argparse.ArgumentParser(description="A simple tool.")
     parser.add_argument("--name", default="World", help="Name to greet")
