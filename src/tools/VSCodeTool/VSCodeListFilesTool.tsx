@@ -2,17 +2,17 @@ import { z } from 'zod'
 import * as React from 'react'
 import { Text, Box } from 'ink'
 import { Tool, ValidationResult } from '../../Tool'
-import { makeVSCodeRequest, VSCodeAvailabilityError, ensureVSCodeAvailable } from './utils'
+import { makeVSCodeRequest, VSCodeNotConnectedError, ensureVSCodeAvailable } from './utils'
 
 export const inputSchema = z.strictObject({
-  pattern: z.string().optional().describe('Glob pattern to match files (e.g., "**/*.py" for Python files)')
+  pattern: z.string().describe('Glob pattern to match files (e.g., "**/*.py", "src/**")')
 })
 
 type In = z.infer<typeof inputSchema>
 export type Out = {
-  files: string[]
-  total: number
   pattern: string
+  files: string[]
+  count: number
 }
 
 export const VSCodeListFilesTool = {
@@ -22,7 +22,7 @@ export const VSCodeListFilesTool = {
   },
   inputSchema,
   isReadOnly: () => true,
-  userFacingName: (input?: In) => input?.pattern ? `List files: ${input.pattern}` : 'List VS Code Files',
+  userFacingName: (input?: In) => input ? `List files: ${input.pattern}` : 'List VS Code Files',
   
   async isEnabled() {
     try {
@@ -38,6 +38,10 @@ export const VSCodeListFilesTool = {
   },
   
   async validateInput(input: In): Promise<ValidationResult> {
+    if (!input.pattern) {
+      return { result: false, message: 'pattern is required' }
+    }
+    
     return { result: true, message: '' }
   },
   
@@ -45,18 +49,15 @@ export const VSCodeListFilesTool = {
     return `List files in the VS Code workspace matching a glob pattern.
 
 Parameters:
-- pattern: Glob pattern to match files (default: "**/*")
-  - "**/*.py" for Python files
-  - "**/*.ts" for TypeScript files  
-  - "src/**" for files in src directory
-  - etc.
+- pattern: Glob pattern to match files (e.g., "**/*.py" for all Python files)
 
-Note: Only works when VS Code is installed and the extension API is running on localhost:8090.`
+Returns a list of relative file paths matching the pattern.
+
+Note: Only works when VS Code is open with the Cyne extension installed.`
   },
   
   renderToolUseMessage(input: In, { verbose }: { verbose: boolean }) {
-    const pattern = input.pattern || '**/*'
-    return `📁 Listing files: ${pattern}`
+    return `📁 Listing files: ${input.pattern}`
   },
   
   renderToolUseRejectedMessage() {
@@ -64,46 +65,39 @@ Note: Only works when VS Code is installed and the extension API is running on l
   },
   
   renderToolResultMessage(result: Out, { verbose }: { verbose: boolean }) {
-    const displayFiles = result.total > 50 ? result.files.slice(0, 50) : result.files
-    const truncatedMsg = result.total > 50 ? `... and ${result.total - 50} more files` : ''
-    
     return (
       <Box flexDirection="column">
-        <Text color="cyan" bold>📁 Workspace Files</Text>
-        <Text><Text bold>Pattern:</Text> {result.pattern}</Text>
-        <Text><Text bold>Total Found:</Text> {result.total}</Text>
-        <Text></Text>
-        {displayFiles.map((file, i) => (
-          <Text key={i} color="dim">{`${(i + 1).toString().padStart(2)} `}. {file}</Text>
+        <Text color="cyan" bold>Files matching "{result.pattern}":</Text>
+        <Text color="dim">{result.count} files found</Text>
+        {verbose && result.files.slice(0, 20).map((file, i) => (
+          <Text key={i}>  {file}</Text>
         ))}
-        {truncatedMsg && <Text color="dim">{truncatedMsg}</Text>}
+        {verbose && result.count > 20 && (
+          <Text color="dim">  ... and {result.count - 20} more</Text>
+        )}
       </Box>
     )
   },
   
   renderResultForAssistant(data: Out): string {
-    const displayFiles = data.total > 50 ? data.files.slice(0, 50) : data.files
-    const truncatedMsg = data.total > 50 ? `\n... and ${data.total - 50} more files` : ''
-    
-    return `VS Code Workspace Files:
-Pattern: ${data.pattern}
-Total Found: ${data.total}
-
-Files:
-${displayFiles.map((file, i) => `${i + 1}. ${file}`).join('\n')}${truncatedMsg}`
+    const fileList = data.files.slice(0, 50).join('\n')
+    return `Files matching "${data.pattern}":
+Count: ${data.count}
+${fileList}${data.count > 50 ? `\n... and ${data.count - 50} more files` : ''}`
   },
   
   async *call(input: In, context: any) {
     try {
-      const pattern = input.pattern || '**/*'
-      const queryParams = new URLSearchParams({ pattern })
+      const response = await makeVSCodeRequest<{ files: string[] }>('workspace/files', {
+        pattern: input.pattern
+      })
       
-      const response = await makeVSCodeRequest(`/workspace/files?${queryParams.toString()}`)
+      const files = response.files || []
       
       const result: Out = {
-        files: response.files || [],
-        total: response.total || 0,
-        pattern
+        pattern: input.pattern,
+        files,
+        count: files.length
       }
       
       yield {
@@ -112,9 +106,9 @@ ${displayFiles.map((file, i) => `${i + 1}. ${file}`).join('\n')}${truncatedMsg}`
         resultForAssistant: this.renderResultForAssistant(result)
       }
     } catch (error) {
-      const errorMessage = error instanceof VSCodeAvailabilityError 
+      const errorMessage = error instanceof VSCodeNotConnectedError 
         ? error.message 
-        : `Error listing workspace files: ${error instanceof Error ? error.message : 'Unknown error'}`
+        : `Error listing files: ${error instanceof Error ? error.message : 'Unknown error'}`
       
       throw new Error(errorMessage)
     }

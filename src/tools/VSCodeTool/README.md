@@ -1,147 +1,101 @@
 # VS Code Integration Tools
 
-This directory contains VS Code integration tools that allow Cyne to interact with VS Code when it's available and properly configured.
+Socket-based VS Code integration for AI-powered code editing with Cyne CLI.
 
 ## 🔧 Requirements
 
-The VS Code tools only work when both conditions are met:
-1. **VS Code Command**: `code` command is available in your PATH
-2. **Extension API**: VS Code extension API is running on `localhost:8090`
+1. **VS Code** with the Cyne extension installed
+2. Extension automatically starts a socket server when VS Code opens
 
-## 🛠️ Available Tools
+## 🏗️ Architecture
 
-### 🩺 VSCodeHealthTool
-- **Purpose**: Check VS Code availability and connection status
-- **Read-only**: Yes
-- **Permissions**: None required
-- **Usage**: Verify if VS Code integration is working properly
+The integration uses Unix domain sockets for efficient, workspace-aware communication:
 
-### 📋 VSCodeContextTool  
-- **Purpose**: Get current VS Code editor context
-- **Read-only**: Yes
-- **Permissions**: None required
-- **Returns**: Active file, language, workspace, selection, and open tabs
+```
+~/.cynerza/sockets/
+├── registry.json          # Maps workspaces to sockets
+├── vscode-abc123.sock     # Socket for workspace 1
+└── vscode-def456.sock     # Socket for workspace 2
+```
 
-### 📁 VSCodeListFilesTool
-- **Purpose**: List files in the VS Code workspace matching a glob pattern
-- **Read-only**: Yes
-- **Permissions**: None required
-- **Parameters**:
-  - `pattern`: Glob pattern (e.g., "**/*.py", "src/**")
+When you run `cyne` in a directory, it automatically finds the correct VS Code instance.
 
-### 📖 VSCodeReadFileTool
-- **Purpose**: Read content from files in the VS Code workspace
-- **Read-only**: Yes
-- **Permissions**: Required (file reading)
-- **Parameters**:
-  - `file_path`: Relative path to the file
-  - `start_line`: Optional starting line number
-  - `end_line`: Optional ending line number
+## 🛠️ Available Tools (13 Total)
 
-### 📝 VSCodeCreateFileTool
-- **Purpose**: Create new files with content in VS Code workspace
-- **Read-only**: No
-- **Permissions**: Required (file creation)
-- **Parameters**:
-  - `filename`: Name/path of the file to create
-  - `content`: Content to write to the file
+### Health & Context
+| Tool | Description |
+|------|-------------|
+| `VSCodeHealth` | Check VS Code connection status |
+| `VSCodeContext` | Get active editor state, selection, open tabs |
 
-### ✏️ VSCodeEditFileTool
-- **Purpose**: Edit existing files by replacing text in VS Code workspace
-- **Read-only**: No
-- **Permissions**: Required (file editing)
-- **Parameters**:
-  - `filename`: Name/path of the file to edit
-  - `old_text`: Text to replace (must match exactly)
-  - `new_text`: New text to replace with
+### File Operations
+| Tool | Description |
+|------|-------------|
+| `VSCodeListFiles` | List files matching a glob pattern |
+| `VSCodeReadFile` | Read file content (with line range support) |
+| `VSCodeCreateFile` | Create new files |
+| `VSCodeEditFile` | Edit files (search/replace) |
+| `VSCodeOpenFile` | Open file at specific line/column |
+
+### Editor Operations
+| Tool | Description |
+|------|-------------|
+| `VSCodeGoToLine` | Navigate to line/column in active editor |
+| `VSCodeFormat` | Format document using VS Code formatters |
+
+### Workspace Operations
+| Tool | Description |
+|------|-------------|
+| `VSCodeSearch` | Search text across workspace |
+| `VSCodeDiagnostics` | Get lint errors, warnings, hints |
+
+### Symbol Operations
+| Tool | Description |
+|------|-------------|
+| `VSCodeSymbol` | Go to definition, find references, rename |
+
+### Terminal
+| Tool | Description |
+|------|-------------|
+| `VSCodeTerminal` | Execute commands in VS Code terminal |
 
 ## 🔒 Security Features
 
-- **Availability Checks**: All tools check VS Code availability before execution
-- **Permission Management**: Write operations require explicit user permission
-- **Error Handling**: Graceful error handling with clear error messages
-- **Path Validation**: Basic validation to prevent directory traversal
+- **Socket permissions**: Sockets are user-only readable (0600)
+- **Workspace isolation**: Each VS Code window has its own socket
+- **Permission management**: Write operations require user consent
+- **Path validation**: Prevents directory traversal attacks
 
-## 📡 API Integration
+## 🚀 Installation
 
-The tools communicate with VS Code through a REST API running on `localhost:8090`:
+### Install the VS Code Extension
 
-- `GET /health` - Health check endpoint
-- `GET /context` - Get current editor context
-- `GET /workspace/files?pattern=...` - List workspace files
-- `GET /file/read?path=...&startLine=...&endLine=...` - Read file content
-- `POST /file/create` - Create new file
-- `POST /file/edit` - Edit existing file
+```bash
+cd vscode-extension
+npm install
+npm run compile
+# Press F5 in VS Code to run in development mode
 
-## 🚀 Usage Examples
-
-### Check VS Code Status
-```typescript
-// The health tool is always available to check connectivity
-const healthResult = await VSCodeHealthTool.call({})
+# Or build and install:
+npm run package
+code --install-extension cyne-vscode-0.1.0.vsix
 ```
 
-### Get Current Context
-```typescript 
-// Only works when VS Code is available
-const context = await VSCodeContextTool.call({})
-// Returns: { activeFile, language, workspace, selection, openTabs }
+### Verify Installation
+
+```bash
+# The tool should show "Connected" status
+cyne "check vs code health"
 ```
-
-### List Files in Workspace
-```typescript
-const fileList = await VSCodeListFilesTool.call({
-  pattern: "**/*.ts" // List all TypeScript files
-})
-```
-
-### Read File Content
-```typescript
-const fileContent = await VSCodeReadFileTool.call({
-  file_path: "src/main.ts",
-  start_line: 1,
-  end_line: 50
-})
-```
-
-### Create New File
-```typescript
-await VSCodeCreateFileTool.call({
-  filename: "new-feature.ts",
-  content: "export const newFeature = () => {\n  // Implementation\n}"
-})
-```
-
-### Edit Existing File
-```typescript
-await VSCodeEditFileTool.call({
-  filename: "src/config.ts",
-  old_text: "const API_URL = 'http://localhost:3000'",
-  new_text: "const API_URL = 'https://api.production.com'"
-})
-```
-
-## 🎯 Integration Strategy
-
-The VS Code tools are designed to:
-
-1. **Gracefully degrade**: If VS Code isn't available, tools are disabled
-2. **Complement existing tools**: Work alongside regular file system tools
-3. **Respect permissions**: Require user consent for file operations
-4. **Provide rich context**: Include file language, workspace info, and syntax highlighting
 
 ## 🔍 Troubleshooting
 
 ### Tool Not Available
-- Ensure VS Code is installed and `code` command works
-- Verify VS Code extension API is running on port 8090
-- Use `VSCodeHealthTool` to diagnose connectivity issues
+- Ensure VS Code is open in a workspace folder
+- Check if the Cyne extension is active (status bar shows "Cyne")
+- Run `cyne.reconnect` command in VS Code
 
-### Permission Errors
-- VS Code file operations require explicit user permission
-- Check if files/directories are accessible from VS Code workspace
-
-### API Connection Issues  
-- Confirm VS Code extension is properly configured
-- Check if port 8090 is available and not blocked by firewall
-- Verify VS Code workspace is open and active
+### Connection Issues
+- Check `~/.cynerza/sockets/` for socket files
+- Verify registry.json contains your workspace
+- Look at VS Code's "Cyne" output channel for logs

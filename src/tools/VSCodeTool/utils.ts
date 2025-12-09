@@ -1,166 +1,115 @@
-import { z } from 'zod'
+/**
+ * VS Code Tool Utilities
+ * Provides common functions for VS Code tools using socket-based communication
+ */
+
 import * as React from 'react'
-import { Tool, ValidationResult } from '../../Tool'
-import { spawn } from 'child_process'
-import { promisify } from 'util'
-import { fetch } from 'undici'
-import { FallbackToolUseRejectedMessage } from '../../components/FallbackToolUseRejectedMessage'
+import { 
+  sendRequest, 
+  checkVSCodeHealth, 
+  ensureVSCodeConnected,
+  isVSCodeConnected,
+  VSCodeNotConnectedError,
+  VSCodeRequestError,
+  getConnectedWorkspace,
+  connectToVSCode
+} from '../../services/vscodeSocket'
+import { 
+  findSocketForCwd, 
+  cleanupStaleEntries,
+  getAllWorkspaces 
+} from '../../services/vscodeRegistry'
+import { getCwd } from '../../utils/state'
 
-// VS Code API configuration
-const VSCODE_HTTP_URL = "http://localhost:8090"
-const HEADERS = {
-  'User-Agent': 'Cyne-Agent/1.0',
-  'Accept': 'application/json',
-  'Content-Type': 'application/json'
-}
-
-export class VSCodeAvailabilityError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'VSCodeAvailabilityError'
-  }
-}
-
-/**
- * Check if 'code' command is available in the system
- */
-export async function checkCodeCommand(): Promise<boolean> {
-  try {
-    return new Promise((resolve) => {
-      const child = spawn('code', ['--version'], { stdio: 'ignore' })
-      
-      const timer = setTimeout(() => {
-        child.kill()
-        resolve(false)
-      }, 5000) // 5 second timeout
-      
-      child.on('exit', (code) => {
-        clearTimeout(timer)
-        resolve(code === 0)
-      })
-      
-      child.on('error', () => {
-        clearTimeout(timer)
-        resolve(false)
-      })
-    })
-  } catch {
-    return false
-  }
-}
+// Re-export error types for tool usage
+export { VSCodeNotConnectedError, VSCodeRequestError }
 
 /**
- * Check if VS Code extension API is running on localhost:8090
+ * Check if VS Code is available for the current workspace
  */
-export async function checkVSCodeAPI(): Promise<boolean> {
-  try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 3000)
-    
-    try {
-      const response = await fetch(`${VSCODE_HTTP_URL}/health`, {
-        method: 'GET',
-        signal: controller.signal
-      })
-      clearTimeout(timeout)
-      return response.ok
-    } finally {
-      clearTimeout(timeout)
-    }
-  } catch {
-    // Fallback: try to connect to the port
-    try {
-      const net = await import('net')
-      return new Promise((resolve) => {
-        const socket = new net.Socket()
-        
-        socket.setTimeout(2000)
-        
-        socket.on('connect', () => {
-          socket.destroy()
-          resolve(true)
-        })
-        
-        socket.on('timeout', () => {
-          socket.destroy()
-          resolve(false)
-        })
-        
-        socket.on('error', () => {
-          resolve(false)
-        })
-        
-        socket.connect(8090, 'localhost')
-      })
-    } catch {
-      return false
-    }
-  }
-}
-
-/**
- * Check if VS Code and its extension API are available
- */
-export async function checkVSCodeAvailability(): Promise<{ isAvailable: boolean; message: string }> {
-  const codeAvailable = await checkCodeCommand()
-  const apiAvailable = await checkVSCodeAPI()
+export async function checkVSCodeAvailability(): Promise<{
+  isAvailable: boolean
+  message: string
+  workspace?: string
+}> {
+  // First check if we have a registered workspace
+  const workspaceEntry = findSocketForCwd(getCwd())
   
-  if (!codeAvailable && !apiAvailable) {
+  if (!workspaceEntry) {
     return {
       isAvailable: false,
-      message: "❌ VS Code command not found and API not accessible on localhost:8090"
+      message: '❌ No VS Code instance found for this workspace. Open VS Code with the Cyne extension installed.'
     }
-  } else if (!codeAvailable) {
+  }
+  
+  // Try to connect and ping
+  const health = await checkVSCodeHealth()
+  
+  if (health.connected) {
     return {
-      isAvailable: false,
-      message: "❌ VS Code command not found (install VS Code and ensure 'code' is in PATH)"
-    }
-  } else if (!apiAvailable) {
-    return {
-      isAvailable: false,
-      message: "❌ VS Code extension API not accessible on localhost:8090"
+      isAvailable: true,
+      message: '✅ VS Code is connected',
+      workspace: health.workspace
     }
   } else {
     return {
-      isAvailable: true,
-      message: "✅ VS Code is available and connected"
+      isAvailable: false,
+      message: `❌ VS Code connection failed: ${health.error || 'Unknown error'}`
     }
   }
 }
 
 /**
- * Ensure VS Code is available, throw exception if not
+ * Ensure VS Code is available, throw if not
  */
 export async function ensureVSCodeAvailable(): Promise<void> {
-  const { isAvailable, message } = await checkVSCodeAvailability()
-  if (!isAvailable) {
-    throw new VSCodeAvailabilityError(message)
-  }
+  await ensureVSCodeConnected()
 }
 
 /**
- * Make authenticated request to VS Code API
+ * Make a request to VS Code
+ * This is the main API for tools to communicate with VS Code
  */
-export async function makeVSCodeRequest(endpoint: string, options: any = {}): Promise<any> {
-  await ensureVSCodeAvailable()
-  
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 10000)
-  
-  try {
-    const url = `${VSCODE_HTTP_URL}${endpoint}`
-    const response = await fetch(url, {
-      ...options,
-      headers: { ...HEADERS, ...(options.headers || {}) },
-      signal: controller.signal
-    })
-    
-    if (!response.ok) {
-      throw new Error(`VS Code API request failed: HTTP ${response.status}`)
-    }
-    
-    return response.json()
-  } finally {
-    clearTimeout(timeout)
+export async function makeVSCodeRequest<T = any>(
+  method: string, 
+  params?: any
+): Promise<T> {
+  return sendRequest<T>(method, params)
+}
+
+/**
+ * Check if VS Code connection is active
+ */
+export function isVSCodeActive(): boolean {
+  return isVSCodeConnected()
+}
+
+/**
+ * Get info about the connected VS Code workspace
+ */
+export function getActiveVSCodeWorkspace() {
+  return getConnectedWorkspace()
+}
+
+/**
+ * List all registered VS Code workspaces
+ */
+export function listVSCodeWorkspaces() {
+  cleanupStaleEntries()
+  return getAllWorkspaces()
+}
+
+/**
+ * Try to connect to VS Code for a specific directory
+ */
+export async function tryConnectVSCode(cwd?: string): Promise<boolean> {
+  return connectToVSCode(cwd)
+}
+
+// Legacy compatibility: Keep the old class name for backward compatibility
+export class VSCodeAvailabilityError extends VSCodeNotConnectedError {
+  constructor(message: string) {
+    super(message)
+    this.name = 'VSCodeAvailabilityError'
   }
 }

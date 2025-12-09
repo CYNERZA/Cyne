@@ -2,7 +2,7 @@ import { z } from 'zod'
 import * as React from 'react'
 import { Text, Box } from 'ink'
 import { Tool, ValidationResult } from '../../Tool'
-import { makeVSCodeRequest, VSCodeAvailabilityError, ensureVSCodeAvailable } from './utils'
+import { makeVSCodeRequest, VSCodeNotConnectedError, ensureVSCodeAvailable } from './utils'
 
 export const inputSchema = z.strictObject({})
 
@@ -57,7 +57,7 @@ This tool provides:
 - Active selection (if any)
 - List of open tabs
 
-Note: Only works when VS Code is installed and the extension API is running on localhost:8090.`
+Note: Only works when VS Code is open with the Cyne extension installed.`
   },
   
   renderToolUseMessage(input: In, { verbose }: { verbose: boolean }) {
@@ -102,7 +102,7 @@ Note: Only works when VS Code is installed and the extension API is running on l
   
   async *call(input: In, context: any) {
     try {
-      const response = await makeVSCodeRequest('/context')
+      const response = await makeVSCodeRequest<Out>('editor/context')
       
       const result: Out = {
         activeFile: response.activeFile || '',
@@ -125,7 +125,7 @@ Note: Only works when VS Code is installed and the extension API is running on l
         resultForAssistant: this.renderResultForAssistant(result)
       }
     } catch (error) {
-      const errorMessage = error instanceof VSCodeAvailabilityError 
+      const errorMessage = error instanceof VSCodeNotConnectedError 
         ? error.message 
         : `Error getting VS Code context: ${error instanceof Error ? error.message : 'Unknown error'}`
       

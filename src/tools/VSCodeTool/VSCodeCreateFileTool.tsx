@@ -2,8 +2,7 @@ import { z } from 'zod'
 import * as React from 'react'
 import { Text, Box } from 'ink'
 import { Tool, ValidationResult } from '../../Tool'
-import { makeVSCodeRequest, VSCodeAvailabilityError, ensureVSCodeAvailable } from './utils'
-import { HighlightedCode } from '../../components/HighlightedCode'
+import { makeVSCodeRequest, VSCodeNotConnectedError, ensureVSCodeAvailable } from './utils'
 
 export const inputSchema = z.strictObject({
   filename: z.string().describe('Name/path of the file to create (e.g., "test.py" or "folder/test.py")'),
@@ -13,14 +12,15 @@ export const inputSchema = z.strictObject({
 type In = z.infer<typeof inputSchema>
 export type Out = {
   filename: string
-  created: boolean
+  success: boolean
   message: string
+  created: boolean
 }
 
 export const VSCodeCreateFileTool = {
   name: 'VSCodeCreateFile',
   async description() {
-    return 'Create a new file with the specified content in VS Code workspace'
+    return 'Create a new file with content in the VS Code workspace'
   },
   inputSchema,
   isReadOnly: () => false,
@@ -36,8 +36,7 @@ export const VSCodeCreateFileTool = {
   },
   
   needsPermissions(input: In) {
-    // File creation is a write operation that needs permission
-    return true
+    return true  // File creation requires permission
   },
   
   async validateInput(input: In): Promise<ValidationResult> {
@@ -45,31 +44,27 @@ export const VSCodeCreateFileTool = {
       return { result: false, message: 'filename is required' }
     }
     
-    if (!input.content && input.content !== '') {
-      return { result: false, message: 'content is required (can be empty string)' }
-    }
-    
-    // Basic filename validation
     if (input.filename.includes('..')) {
       return { result: false, message: 'filename cannot contain ".."' }
+    }
+    
+    if (!input.content && input.content !== '') {
+      return { result: false, message: 'content is required (can be empty string)' }
     }
     
     return { result: true, message: '' }
   },
   
   async prompt() {
-    return `Create a new file with the specified content in the VS Code workspace.
+    return `Create a new file with content in the VS Code workspace.
 
 Parameters:
-- filename: Name/path of the file to create (e.g., 'test.py' or 'folder/test.py')
-- content: Content to write to the file
+- filename: Name or path of the file to create (required)
+- content: Content to write to the file (required, can be empty)
 
-The tool will:
-1. Show a preview of the file content
-2. Create the file in the workspace
-3. Optionally display the file in VS Code
+The file will be created in the current workspace and opened in VS Code.
 
-Note: Only works when VS Code is installed and the extension API is running on localhost:8090.`
+Note: Only works when VS Code is open with the Cyne extension installed.`
   },
   
   renderToolUseMessage(input: In, { verbose }: { verbose: boolean }) {
@@ -83,10 +78,10 @@ Note: Only works when VS Code is installed and the extension API is running on l
   renderToolResultMessage(result: Out, { verbose }: { verbose: boolean }) {
     return (
       <Box flexDirection="column">
-        <Text color={result.created ? "green" : "red"} bold>
-          {result.created ? "✅" : "❌"} {result.message}
+        <Text color={result.success ? "green" : "red"} bold>
+          {result.success ? "✅" : "❌"} {result.message}
         </Text>
-        {result.created && (
+        {result.success && (
           <Text color="dim">File created: {result.filename}</Text>
         )}
       </Box>
@@ -96,36 +91,24 @@ Note: Only works when VS Code is installed and the extension API is running on l
   renderResultForAssistant(data: Out): string {
     return `File Creation Result:
 - Filename: ${data.filename}
-- Created: ${data.created}
+- Success: ${data.success}
 - Message: ${data.message}`
   },
   
   async *call(input: In, context: any) {
     try {
-      // First, show a preview of what will be created
-      yield {
-        type: 'preview',
-        data: {
-          filename: input.filename,
-          content: input.content
-        },
-        resultForAssistant: `Creating file "${input.filename}" with content preview:\n\`\`\`\n${input.content}\n\`\`\``
-      }
-      
-      const response = await makeVSCodeRequest('/file/create', {
-        method: 'POST',
-        body: JSON.stringify({
-          path: input.filename,
-          content: input.content
-        })
+      const response = await makeVSCodeRequest<{ success: boolean; error?: string }>('file/create', {
+        path: input.filename,
+        content: input.content
       })
       
       const result: Out = {
         filename: input.filename,
-        created: response.success || false,
+        success: response.success || false,
         message: response.error 
           ? `Error creating file: ${response.error}`
-          : `Successfully created file: ${input.filename}`
+          : `Successfully created file: ${input.filename}`,
+        created: response.success || false
       }
       
       yield {
@@ -134,14 +117,15 @@ Note: Only works when VS Code is installed and the extension API is running on l
         resultForAssistant: this.renderResultForAssistant(result)
       }
     } catch (error) {
-      const errorMessage = error instanceof VSCodeAvailabilityError 
+      const errorMessage = error instanceof VSCodeNotConnectedError 
         ? error.message 
         : `Error creating file ${input.filename}: ${error instanceof Error ? error.message : 'Unknown error'}`
       
       const result: Out = {
         filename: input.filename,
-        created: false,
-        message: errorMessage
+        success: false,
+        message: errorMessage,
+        created: false
       }
       
       yield {

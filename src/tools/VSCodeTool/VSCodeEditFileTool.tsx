@@ -2,8 +2,7 @@ import { z } from 'zod'
 import * as React from 'react'
 import { Text, Box } from 'ink'
 import { Tool, ValidationResult } from '../../Tool'
-import { makeVSCodeRequest, VSCodeAvailabilityError, ensureVSCodeAvailable } from './utils'
-import { StructuredDiff } from '../../components/StructuredDiff'
+import { makeVSCodeRequest, VSCodeNotConnectedError, ensureVSCodeAvailable } from './utils'
 
 export const inputSchema = z.strictObject({
   filename: z.string().describe('Name/path of the file to edit (e.g., "test.py" or "folder/test.py")'),
@@ -39,8 +38,7 @@ export const VSCodeEditFileTool = {
   },
   
   needsPermissions(input: In) {
-    // File editing is a write operation that needs permission
-    return true
+    return true  // File editing requires permission
   },
   
   async validateInput(input: In): Promise<ValidationResult> {
@@ -56,7 +54,6 @@ export const VSCodeEditFileTool = {
       return { result: false, message: 'new_text is required (can be empty string)' }
     }
     
-    // Basic filename validation
     if (input.filename.includes('..')) {
       return { result: false, message: 'filename cannot contain ".."' }
     }
@@ -75,9 +72,8 @@ Parameters:
 The tool will:
 1. Show a diff preview of the proposed changes
 2. Perform the text replacement in the file
-3. Optionally display the diff in VS Code
 
-Note: Only works when VS Code is installed and the extension API is running on localhost:8090.`
+Note: Only works when VS Code is open with the Cyne extension installed.`
   },
   
   renderToolUseMessage(input: In, { verbose }: { verbose: boolean }) {
@@ -138,13 +134,10 @@ Note: Only works when VS Code is installed and the extension API is running on l
         resultForAssistant: `Editing file "${input.filename}":\n\nReplacing:\n${input.old_text}\n\nWith:\n${input.new_text}`
       }
       
-      const response = await makeVSCodeRequest('/file/edit', {
-        method: 'POST',
-        body: JSON.stringify({
-          path: input.filename,
-          oldContent: input.old_text,
-          newContent: input.new_text
-        })
+      const response = await makeVSCodeRequest<{ success: boolean; error?: string }>('file/edit', {
+        path: input.filename,
+        oldContent: input.old_text,
+        newContent: input.new_text
       })
       
       const result: Out = {
@@ -163,7 +156,7 @@ Note: Only works when VS Code is installed and the extension API is running on l
         resultForAssistant: this.renderResultForAssistant(result)
       }
     } catch (error) {
-      const errorMessage = error instanceof VSCodeAvailabilityError 
+      const errorMessage = error instanceof VSCodeNotConnectedError 
         ? error.message 
         : `Error editing file ${input.filename}: ${error instanceof Error ? error.message : 'Unknown error'}`
       
