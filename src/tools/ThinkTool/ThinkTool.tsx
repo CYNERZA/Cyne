@@ -8,6 +8,8 @@ import { MessageResponse } from '../../components/MessageResponse'
 import { checkGate, logEvent } from '../../services/statsig'
 import { USE_BEDROCK, USE_VERTEX } from '../../utils/model'
 
+import { isThinkModeEnabled } from '../../commands/think'
+
 const thinkToolSchema = z.object({
   thought: z.string().describe('Your thoughts.'),
 })
@@ -17,8 +19,7 @@ export const ThinkTool = {
   userFacingName: () => 'Think',
   description: async () => DESCRIPTION,
   inputSchema: thinkToolSchema,
-  isEnabled: async () =>
-    Boolean(process.env.THINK_TOOL) && (await checkGate('tengu_think_tool')),
+  isEnabled: async () => isThinkModeEnabled(),
   isReadOnly: () => true,
   needsPermissions: () => false,
   prompt: async () => PROMPT,

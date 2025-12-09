@@ -90,3 +90,16 @@ export const getReadOnlyTools = memoize(async (): Promise<Tool[]> => {
   const isEnabled = await Promise.all(tools.map(tool => tool.isEnabled()))
   return tools.filter((_, index) => isEnabled[index])
 })
+
+/**
+ * Clear the memoized tools cache - call this when think mode is toggled
+ * so that ThinkTool gets properly included/excluded
+ */
+export function clearToolsCache(): void {
+  if (getTools.cache && typeof getTools.cache.clear === 'function') {
+    getTools.cache.clear()
+  }
+  if (getReadOnlyTools.cache && typeof getReadOnlyTools.cache.clear === 'function') {
+    getReadOnlyTools.cache.clear()
+  }
+}

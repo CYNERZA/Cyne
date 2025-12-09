@@ -158,13 +158,19 @@ export const AgentTool = {
         tools,
       }
     } else {
+      const usage = lastMessage.message.usage || {
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 0,
+        input_tokens: 0,
+        output_tokens: 0,
+      }
       const result = [
         toolUseCount === 1 ? '1 tool use' : `${toolUseCount} tool uses`,
         formatNumber(
-          (lastMessage.message.usage.cache_creation_input_tokens ?? 0) +
-            (lastMessage.message.usage.cache_read_input_tokens ?? 0) +
-            lastMessage.message.usage.input_tokens +
-            lastMessage.message.usage.output_tokens,
+          (usage.cache_creation_input_tokens ?? 0) +
+            (usage.cache_read_input_tokens ?? 0) +
+            usage.input_tokens +
+            usage.output_tokens,
         ) + ' tokens',
         formatDuration(Date.now() - startTime),
       ]
