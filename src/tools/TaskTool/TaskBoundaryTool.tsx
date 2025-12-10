@@ -120,13 +120,30 @@ This tool tracks your progress through complex tasks.`
       summary: input.summary
     })
     
-    // If VS Code is connected, try to open brain panel
+    // If VS Code is connected, notify and open brain panel
     if (isVSCodeConnected()) {
       try {
         const { sendRequest } = await import('../../services/vscodeSocket')
+        
+        // Open brain panel
         await sendRequest('brain/open', { docType: 'task' })
+        
+        // Send phase notification to VSCode
+        const modeMessages: Record<string, { type: string; title: string }> = {
+          PLANNING: { type: 'info', title: '📋 Planning Phase' },
+          EXECUTION: { type: 'info', title: '⚡ Execution Phase' },
+          VERIFICATION: { type: 'success', title: '✅ Verification Phase' }
+        }
+        
+        const notif = modeMessages[input.mode] || { type: 'info', title: 'Task Update' }
+        
+        await sendRequest('notification/notify', {
+          message: `${input.task_name}: ${input.status}`,
+          type: notif.type,
+          title: notif.title
+        })
       } catch {
-        // Ignore VS Code errors
+        // Ignore VS Code errors - CLI will still show the update
       }
     }
     

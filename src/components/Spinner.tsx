@@ -151,6 +151,7 @@ export function Spinner(): React.ReactNode {
   const [patternFrame, setPatternFrame] = useState(0)
   const [currentPattern] = useState(() => stateManager.getCurrentPattern())
   const [elapsedTime, setElapsedTime] = useState(0)
+  const [tokenCount, setTokenCount] = useState(0)
   const message = useRef(stateManager.getMessage())
   const startTime = useRef(Date.now())
 
@@ -158,6 +159,8 @@ export function Spinner(): React.ReactNode {
     const timer = setInterval(() => {
       setPatternFrame(pf => (pf + 1) % currentPattern.length)
       stateManager.incrementPatternFrame()
+      // Refresh token count from session state
+      setTokenCount(getSessionState('streamingTokens') || 0)
     }, 200) // Enhanced timing for better visibility
 
     return () => clearInterval(timer)
@@ -184,6 +187,9 @@ export function Spinner(): React.ReactNode {
       <Text color={getTheme().secondaryText}>
         ({elapsedTime}s · <Text bold color={getTheme().cynerza}>esc</Text> to interrupt)
       </Text>
+      {tokenCount > 0 && (
+        <Text color={getTheme().cynerza}> · {tokenCount} tokens</Text>
+      )}
       <Text color={getTheme().secondaryText}>
         · {getSessionState('currentError')}
       </Text>

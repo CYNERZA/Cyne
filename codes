@@ -1,0 +1,60 @@
+// Simple calculator functions
+function add(a, b) {
+    return a + b;
+}
+
+function subtract(a, b) {
+    return a - b;
+}
+
+function multiply(a, b) {
+    return a * b;
+}
+
+function divide(a, b) {
+    if (b === 0) {
+        throw new Error("Division by zero is not allowed");
+    }
+    return a / b;
+}
+
+// Example usage
+const num1 = 10;
+const num2 = 5;
+
+console.log(`${num1} + ${num2} = ${add(num1, num2)}`);
+console.log(`${num1} - ${num2} = ${subtract(num1, num2)}`);
+console.log(`${num1} * ${num2} = ${multiply(num1, num2)}`);
+console.log(`${num1} / ${num2} = ${divide(num1, num2)}`);
+
+// ==========================================
+// String manipulation demo
+// ==========================================
+
+function reverseString(str) {
+    return str.split('').reverse().join('');
+}
+
+function isPalindrome(str) {
+    const cleaned = str.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return cleaned === reverseString(cleaned);
+}
+
+function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+function countVowels(str) {
+    const vowels = str.match(/[aeiou]/gi);
+    return vowels ? vowels.length : 0;
+}
+
+// Example usage
+const testString = "Hello World";
+const palindromeTest = "A man a plan a canal Panama";
+
+console.log(`\nOriginal: ${testString}`);
+console.log(`Reversed: ${reverseString(testString)}`);
+console.log(`Capitalized: ${capitalize(testString)}`);
+console.log(`Vowel count: ${countVowels(testString)}`);
+console.log(`\nIs "${palindromeTest}" a palindrome? ${isPalindrome(palindromeTest)}`);

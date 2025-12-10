@@ -113,3 +113,91 @@ export class VSCodeAvailabilityError extends VSCodeNotConnectedError {
     this.name = 'VSCodeAvailabilityError'
   }
 }
+
+/**
+ * Notification types for VS Code
+ */
+export type NotificationType = 'info' | 'warning' | 'error' | 'success'
+export type TaskStatus = 'completed' | 'failed' | 'cancelled'
+
+/**
+ * Send a task completion notification to VS Code
+ * This will show a notification popup in VS Code when a task finishes
+ */
+export async function notifyTaskCompletion(params: {
+  taskName: string
+  status: TaskStatus
+  summary?: string
+  duration?: number
+  openFile?: string
+}): Promise<void> {
+  if (!isVSCodeConnected()) {
+    return // Silently ignore if not connected
+  }
+  
+  try {
+    await sendRequest('notification/taskComplete', params)
+  } catch {
+    // Ignore notification errors
+  }
+}
+
+/**
+ * Send a general notification to VS Code
+ */
+export async function notifyVSCode(params: {
+  message: string
+  type?: NotificationType
+  title?: string
+  actions?: string[]
+}): Promise<string | undefined> {
+  if (!isVSCodeConnected()) {
+    return undefined // Silently ignore if not connected
+  }
+  
+  try {
+    const result = await sendRequest<{ success: boolean; action?: string }>('notification/notify', params)
+    return result.action
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Show a progress notification in VS Code
+ */
+export async function showProgress(id: string, title: string, message?: string): Promise<void> {
+  if (!isVSCodeConnected()) return
+  
+  try {
+    await sendRequest('notification/progress', { id, title, message })
+  } catch {
+    // Ignore
+  }
+}
+
+/**
+ * Update progress notification
+ */
+export async function updateProgress(id: string, message?: string, increment?: number): Promise<void> {
+  if (!isVSCodeConnected()) return
+  
+  try {
+    await sendRequest('notification/progress', { id, title: '', message, increment })
+  } catch {
+    // Ignore
+  }
+}
+
+/**
+ * Complete a progress notification
+ */
+export async function completeProgress(id: string): Promise<void> {
+  if (!isVSCodeConnected()) return
+  
+  try {
+    await sendRequest('notification/progress', { id, title: '', done: true })
+  } catch {
+    // Ignore
+  }
+}

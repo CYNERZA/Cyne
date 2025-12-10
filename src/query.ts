@@ -19,7 +19,7 @@ interface ToolExecutionBlock {
 // Add type alias for backward compatibility
 type ToolUseBlock = ToolExecutionBlock
 
-import { UUID } from 'crypto'
+import { UUID, randomUUID } from 'crypto'
 import type { Tool, ToolUseContext } from './Tool'
 import {
   messagePairValidForBinaryFeedback,
@@ -29,6 +29,8 @@ import { CanUseToolFn } from './hooks/useCanUseTool'
 import {
   formatSystemPromptWithContext,
   queryOpenAI,
+  queryOpenAIStreaming,
+  StreamingDelta,
 } from './services/cynerza.js'
 import { logEvent } from './services/statsig'
 import { all } from './utils/generators'
@@ -80,8 +82,17 @@ export type ProgressMessage = {
   uuid: UUID
 }
 
+/**
+ * Partial message for streaming text display
+ */
+export type PartialMessage = {
+  type: 'partial'
+  text: string
+  uuid: UUID
+}
+
 // Each array item is either a single message or a message-and-response pair
-export type Message = UserMessage | AssistantMessage | ProgressMessage
+export type Message = UserMessage | AssistantMessage | ProgressMessage | PartialMessage
 
 const MAX_TOOL_USE_CONCURRENCY = 10
 
@@ -534,4 +545,139 @@ function formatError(error: unknown): string {
   const start = fullMessage.slice(0, halfLength)
   const end = fullMessage.slice(-halfLength)
   return `${start}\n\n... [${fullMessage.length - 10000} characters truncated] ...\n\n${end}`
+}
+
+/**
+ * Streaming version of query - yields PartialMessage for real-time text display
+ */
+export async function* queryStreaming(
+  messages: Message[],
+  systemPrompt: string[],
+  context: { [k: string]: string },
+  canUseTool: CanUseToolFn,
+  toolUseContext: ToolUseContext,
+): AsyncGenerator<Message, void> {
+  const fullSystemPrompt = formatSystemPromptWithContext(systemPrompt, context)
+  const partialUUID = randomUUID()
+  
+  // Use streaming API
+  const streamingGenerator = queryOpenAIStreaming(
+    normalizeMessagesForAPI(messages),
+    fullSystemPrompt,
+    toolUseContext.options.maxThinkingTokens,
+    toolUseContext.options.tools,
+    toolUseContext.abortController.signal,
+    {
+      dangerouslySkipPermissions:
+        toolUseContext.options.dangerouslySkipPermissions ?? false,
+      model: toolUseContext.options.slowAndCapableModel,
+      prependCLISysprompt: true,
+    },
+  )
+
+  let assistantMessage: AssistantMessage | null = null
+
+  for await (const delta of streamingGenerator) {
+    if (toolUseContext.abortController.signal.aborted) {
+      yield createAssistantMessage(INTERRUPT_MESSAGE)
+      return
+    }
+
+    switch (delta.type) {
+      case 'text_delta':
+        // Yield partial message for real-time display
+        yield {
+          type: 'partial',
+          text: delta.text,
+          uuid: partialUUID,
+        } as PartialMessage
+        break
+      
+      case 'done':
+        assistantMessage = delta.message
+        break
+    }
+  }
+
+  if (!assistantMessage) {
+    yield createAssistantMessage(INTERRUPT_MESSAGE)
+    return
+  }
+
+  // Yield the final assistant message
+  yield assistantMessage
+
+  // Handle tool use (same as non-streaming version)
+  if (!assistantMessage.message || !assistantMessage.message.content) {
+    return
+  }
+  
+  const content = Array.isArray(assistantMessage.message.content) 
+    ? assistantMessage.message.content 
+    : []
+    
+  const toolUseMessages = content.filter(
+    _ => _.type === 'tool_use',
+  )
+
+  if (!toolUseMessages.length) {
+    return
+  }
+
+  const toolResults: UserMessage[] = []
+
+  // Run tools (reuse existing logic)
+  if (
+    toolUseMessages.every(msg =>
+      toolUseContext.options.tools.find(t => t.name === msg.name)?.isReadOnly(),
+    )
+  ) {
+    for await (const message of runToolsConcurrently(
+      toolUseMessages,
+      assistantMessage,
+      canUseTool,
+      toolUseContext,
+    )) {
+      yield message
+      if (message.type === 'user') {
+        toolResults.push(message)
+      }
+    }
+  } else {
+    for await (const message of runToolsSerially(
+      toolUseMessages,
+      assistantMessage,
+      canUseTool,
+      toolUseContext,
+    )) {
+      yield message
+      if (message.type === 'user') {
+        toolResults.push(message)
+      }
+    }
+  }
+
+  if (toolUseContext.abortController.signal.aborted) {
+    yield createAssistantMessage(INTERRUPT_MESSAGE_FOR_TOOL_USE)
+    return
+  }
+
+  // Sort and recurse
+  const orderedToolResults = toolResults.sort((a, b) => {
+    const aIndex = toolUseMessages.findIndex(
+      tu => tu.id === (a.message.content[0] as ToolExecutionBlock).id,
+    )
+    const bIndex = toolUseMessages.findIndex(
+      tu => tu.id === (b.message.content[0] as ToolExecutionBlock).id,
+    )
+    return aIndex - bIndex
+  })
+
+  yield* await queryStreaming(
+    [...messages, assistantMessage, ...orderedToolResults],
+    systemPrompt,
+    context,
+    canUseTool,
+    toolUseContext,
+  )
 }

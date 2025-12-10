@@ -14,6 +14,7 @@ import { handleWorkspaceFiles, handleWorkspaceSearch } from './handlers/workspac
 import { handleTerminalExecute, handleTerminalList } from './handlers/terminal'
 import { handleDiagnosticsGet } from './handlers/diagnostics'
 import { handleSymbolDefinition, handleSymbolReferences, handleSymbolRename } from './handlers/symbols'
+import { handleNotification, handleTaskCompletion, handleProgressNotification } from './handlers/notification'
 import * as diffManager from './diffManager'
 import * as brainPanel from './brainPanel'
 
@@ -204,6 +205,11 @@ function registerHandlers(server: SocketServer): void {
   server.registerHandler('brain/getDir', async () => {
     return { path: brainPanel.getBrainDir() }
   })
+
+  // Notification operations
+  server.registerHandler('notification/notify', handleNotification)
+  server.registerHandler('notification/taskComplete', handleTaskCompletion)
+  server.registerHandler('notification/progress', handleProgressNotification)
 }
 
 /**

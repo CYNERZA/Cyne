@@ -4,6 +4,7 @@ type SessionState = {
   currentError: string | null
   currentApiKeyIndex: Record<'small' | 'large', number>
   failedApiKeys: Record<'small' | 'large', string[]>
+  streamingTokens: number
 }
 
 const isDebug =
@@ -16,6 +17,7 @@ const sessionState: SessionState = {
   currentError: null,
   currentApiKeyIndex: { small: -1, large: -1 },
   failedApiKeys: { small: [], large: [] },
+  streamingTokens: 0,
 } as const
 
 function setSessionState<K extends keyof SessionState>(

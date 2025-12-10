@@ -109,7 +109,15 @@ ${data.message}`
     if (isVSCodeConnected()) {
       try {
         const { sendRequest } = await import('../../services/vscodeSocket')
-        // Could add a notification RPC in VS Code extension
+        const notificationType = input.blocked_on_user ? 'warning' : 'info'
+        const title = input.blocked_on_user ? '⏳ Cyne needs your input' : '💬 Cyne'
+        
+        await sendRequest('notification/notify', {
+          message: input.message,
+          type: notificationType,
+          title,
+          actions: input.paths_to_review?.length ? ['Open Files', 'Dismiss'] : ['OK']
+        })
       } catch {
         // Ignore VS Code errors
       }

@@ -1,0 +1,151 @@
+name: VSCode Extension Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'vscode-extension/package.json'
+  workflow_dispatch:
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.check.outputs.version_changed }}
+      new_version: ${{ steps.check.outputs.new_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if VSCode extension version changed
+        id: check
+        run: |
+          # Get current version from vscode-extension/package.json
+          CURRENT_VERSION=$(node -p "require('./vscode-extension/package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Get previous version
+          git checkout HEAD~1 -- vscode-extension/package.json 2>/dev/null || true
+          PREVIOUS_VERSION=$(node -p "require('./vscode-extension/package.json').version") 2>/dev/null || echo ""
+          git checkout HEAD -- vscode-extension/package.json
+          
+          echo "Previous version: $PREVIOUS_VERSION"
+          
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION"
+            echo "version_changed=true" >> $GITHUB_OUTPUT
+            echo "new_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "Version unchanged"
+            echo "version_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-extension:
+    needs: check-version
+    if: needs.check-version.outputs.version_changed == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: vscode-extension
+        run: npm ci
+
+      - name: Compile TypeScript
+        working-directory: vscode-extension
+        run: npm run compile
+
+      - name: Package extension
+        working-directory: vscode-extension
+        run: |
+          npm install -g @vscode/vsce
+          vsce package --out cyne-vscode.vsix
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode-extension
+          path: vscode-extension/cyne-vscode.vsix
+
+  release-to-cyne-bin:
+    needs: [check-version, build-extension]
+    if: needs.check-version.outputs.version_changed == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout cyne-bin repo
+        uses: actions/checkout@v4
+        with:
+          repository: CYNERZA/cyne-bin
+          token: ${{ secrets.CYNE_BIN_TOKEN }}
+          fetch-depth: 0
+
+      - name: Download VSCode extension artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vscode-extension
+          path: ./
+
+      - name: Get version
+        id: get_version
+        run: |
+          VERSION="${{ needs.check-version.outputs.new_version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="0.1.0"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=vs-$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Create tag
+        run: |
+          git tag -a vs-${{ steps.get_version.outputs.version }} -m "VSCode Extension v${{ steps.get_version.outputs.version }}" || true
+          git push origin --tags || true
+
+      - name: Create GitHub Release on cyne-bin
+        uses: softprops/action-gh-release@v1
+        with:
+          repository: CYNERZA/cyne-bin
+          token: ${{ secrets.CYNE_BIN_TOKEN }}
+          tag_name: vs-${{ steps.get_version.outputs.version }}
+          name: Cyne VSCode Extension v${{ steps.get_version.outputs.version }}
+          body: |
+            ## Cyne VSCode Extension v${{ steps.get_version.outputs.version }}
+            
+            ### Installation
+            
+            #### From VSIX file
+            1. Download `cyne-vscode.vsix` from this release
+            2. In VS Code, press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
+            3. Type "Install from VSIX" and select the downloaded file
+            
+            #### Or via command line
+            ```bash
+            code --install-extension cyne-vscode.vsix
+            ```
+            
+            ### What's New
+            - Notification system integration
+            - Task completion notifications  
+            - Brain panel for planning artifacts
+            - Socket-based CLI communication
+            
+            ### Requirements
+            - VS Code 1.85.0 or higher
+            - Cyne CLI installed (`npm install -g cyne-cli`)
+          files: |
+            cyne-vscode.vsix
+          draft: false
+          prerelease: ${{ contains(steps.get_version.outputs.version, 'beta') || contains(steps.get_version.outputs.version, 'alpha') }}

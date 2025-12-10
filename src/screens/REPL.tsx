@@ -1,4 +1,4 @@
-import { Box, Newline, Static } from 'ink'
+import { Box, Newline, Static, Text } from 'ink'
 import ProjectOnboarding, {
   markProjectOnboardingComplete,
 } from '../ProjectOnboarding.js'
@@ -31,7 +31,9 @@ import {
   type BinaryFeedbackResult,
   type Message as MessageType,
   type ProgressMessage,
+  type PartialMessage,
   query,
+  queryStreaming,
 } from '../query.js'
 import type { WrappedClient } from '../services/mcpClient'
 import type { Tool } from '../Tool'
@@ -59,6 +61,7 @@ import { clearTerminal, updateTerminalTitle } from '../utils/terminal'
 import { BinaryFeedback } from '../components/binary-feedback/BinaryFeedback'
 import { getMaxThinkingTokens } from '../utils/thinking'
 import { getOriginalCwd } from '../utils/state'
+import { setSessionState } from '../utils/sessionState'
 
 type Props = {
   commands: Command[]
@@ -345,8 +348,10 @@ export function REPL({
       ],
     )
 
-    // query the API
-    for await (const message of query(
+    // query the API with streaming
+    let tokenCount = 0
+    setSessionState('streamingTokens', 0) // Reset token count
+    for await (const message of queryStreaming(
       [...messages, lastMessage],
       systemPrompt,
       context,
@@ -367,10 +372,21 @@ export function REPL({
         abortController,
         setToolJSX,
       },
-      getBinaryFeedbackResponse,
     )) {
-      setMessages(oldMessages => [...oldMessages, message])
+      // Handle partial messages - count tokens in real-time
+      if (message.type === 'partial') {
+        // Rough token estimation: ~4 chars per token
+        const estimatedTokens = Math.ceil(message.text.length / 4)
+        tokenCount += estimatedTokens
+        setSessionState('streamingTokens', tokenCount)
+      } else {
+        // Clear token count when we get a non-partial message
+        setSessionState('streamingTokens', 0)
+        tokenCount = 0
+        setMessages(oldMessages => [...oldMessages, message])
+      }
     }
+    setSessionState('streamingTokens', 0) // Final cleanup
     setIsLoading(false)
   }
 

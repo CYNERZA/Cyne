@@ -57,6 +57,14 @@ interface StreamResponse {
   ttftMs?: number
 }
 
+/**
+ * Streaming delta type for partial response updates
+ */
+export type StreamingDelta = 
+  | { type: 'text_delta'; text: string }
+  | { type: 'tool_call_delta'; toolCallId: string; toolName: string; argumentsDelta: string }
+  | { type: 'done'; message: AssistantMessage }
+
 export const MAIN_QUERY_TEMPERATURE = 1
 
 /**
@@ -436,6 +444,215 @@ class AIQueryService {
     }
   }
 
+  /**
+   * Execute query with streaming - yields partial text deltas in real-time
+   */
+  async *executeQueryStreaming(
+    messages: (UserMessage | AssistantMessage)[],
+    systemPrompt: string[],
+    maxThinkingTokens: number,
+    tools: Tool[],
+    signal: AbortSignal,
+    options: {
+      dangerouslySkipPermissions: boolean
+      model: string
+      prependCLISysprompt: boolean
+    },
+  ): AsyncGenerator<StreamingDelta> {
+    try {
+      // Check quota if authenticated
+      if (AuthService.isAuthenticated()) {
+        const quotaCheck = await BackendClient.checkQuota()
+        if (!quotaCheck.can_send) {
+          TelemetryClient.trackEvent('quota_limit_reached', {
+            message: quotaCheck.message,
+          })
+          
+          const errorMessage: AssistantMessage = {
+            uuid: randomUUID(),
+            type: 'assistant',
+            message: {
+              role: 'assistant',
+              content: [
+                {
+                  type: 'text',
+                  text: `⚠️ ${quotaCheck.message}\n\nPlease try again later or upgrade your plan.`,
+                },
+              ],
+            },
+            costUSD: 0,
+            durationMs: 0,
+          } as AssistantMessage
+          
+          yield { type: 'done', message: errorMessage }
+          return
+        }
+      }
+
+      const config = getGlobalConfig()
+      const model = options.model || config.largeModelName || 'gpt-4'
+      
+      // For Anthropic, fall back to non-streaming for now
+      if (config.primaryProvider === 'anthropic') {
+        const result = await this.executeAnthropicQuery(messages, systemPrompt, tools, model)
+        yield { type: 'done', message: result }
+        return
+      }
+
+      // Convert messages to OpenAI format
+      const openaiMessages = MessageFormatService.convertMessagesToOpenAI(messages)
+
+      // Add system prompt as first message
+      if (systemPrompt.length > 0) {
+        openaiMessages.unshift({
+          role: 'system',
+          content: systemPrompt.join('\n')
+        })
+      }
+
+      // Convert tools to OpenAI format
+      const openaiTools = this.transformToolsForOpenAI(tools)
+
+      // Track LLM request
+      TelemetryClient.trackEvent('llm_request_streaming', {
+        provider: config.primaryProvider,
+        model,
+        tool_count: tools.length,
+      })
+
+      // Get streaming completion
+      const streamResult = await getCompletion(
+        'large',
+        {
+          messages: openaiMessages,
+          model,
+          temperature: MAIN_QUERY_TEMPERATURE,
+          max_tokens: 4096,
+          tools: openaiTools,
+          stream: true, // Enable streaming
+        }
+      )
+
+      // Accumulate content for final message
+      let accumulatedContent = ''
+      const toolCalls: Map<number, { id: string; name: string; arguments: string }> = new Map()
+      const startTime = Date.now()
+
+      // Process streaming chunks
+      if (Symbol.asyncIterator in streamResult) {
+        for await (const chunk of streamResult as AsyncIterable<any>) {
+          if (signal.aborted) break
+          
+          const delta = chunk.choices?.[0]?.delta
+          if (!delta) continue
+
+          // Handle text content
+          if (delta.content) {
+            accumulatedContent += delta.content
+            yield { type: 'text_delta', text: delta.content }
+          }
+
+          // Handle tool calls
+          if (delta.tool_calls) {
+            for (const toolCall of delta.tool_calls) {
+              const index = toolCall.index ?? 0
+              
+              if (!toolCalls.has(index)) {
+                toolCalls.set(index, {
+                  id: toolCall.id || '',
+                  name: toolCall.function?.name || '',
+                  arguments: ''
+                })
+              }
+              
+              const existing = toolCalls.get(index)!
+              if (toolCall.id) existing.id = toolCall.id
+              if (toolCall.function?.name) existing.name = toolCall.function.name
+              if (toolCall.function?.arguments) {
+                existing.arguments += toolCall.function.arguments
+                yield {
+                  type: 'tool_call_delta',
+                  toolCallId: existing.id,
+                  toolName: existing.name,
+                  argumentsDelta: toolCall.function.arguments
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // Non-streaming response (fallback)
+        const response = this.processQueryResponse(streamResult)
+        yield { type: 'done', message: response }
+        return
+      }
+
+      // Build final message
+      const content: any[] = []
+      
+      if (accumulatedContent.trim()) {
+        content.push({
+          type: 'text',
+          text: accumulatedContent
+        })
+      }
+
+      // Add tool calls
+      for (const [_, toolCall] of toolCalls) {
+        let parsedInput: any = {}
+        try {
+          parsedInput = JSON.parse(toolCall.arguments || '{}')
+        } catch {
+          parsedInput = { raw_arguments: toolCall.arguments }
+        }
+        
+        content.push({
+          type: 'tool_use',
+          id: toolCall.id,
+          name: toolCall.name,
+          input: parsedInput
+        })
+      }
+
+      // If no content, add default
+      if (content.length === 0) {
+        content.push({
+          type: 'text',
+          text: 'I understand your request.'
+        })
+      }
+
+      const finalMessage: AssistantMessage = {
+        uuid: randomUUID(),
+        type: 'assistant',
+        message: {
+          role: 'assistant',
+          content
+        },
+        costUSD: 0,
+        durationMs: Date.now() - startTime
+      } as AssistantMessage
+
+      // Increment usage counter if authenticated
+      if (AuthService.isAuthenticated()) {
+        BackendClient.incrementUsage().catch(err => {
+          console.error('Failed to increment usage:', err)
+          logError(err)
+        })
+      }
+
+      yield { type: 'done', message: finalMessage }
+
+    } catch (error) {
+      logError(error)
+      
+      TelemetryClient.trackEvent('llm_streaming_error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+      
+      yield { type: 'done', message: this.createErrorResponse(error) }
+    }
+  }
   private async executeAnthropicQuery(
     messages: (UserMessage | AssistantMessage)[],
     systemPrompt: string[],
@@ -711,6 +928,24 @@ export async function queryOpenAI(
   },
 ): Promise<AssistantMessage> {
   return aiQueryService.executeQuery(messages, systemPrompt, maxThinkingTokens, tools, signal, options)
+}
+
+/**
+ * Streaming version of queryOpenAI - yields partial text deltas in real-time
+ */
+export function queryOpenAIStreaming(
+  messages: (UserMessage | AssistantMessage)[],
+  systemPrompt: string[],
+  maxThinkingTokens: number,
+  tools: Tool[],
+  signal: AbortSignal,
+  options: {
+    dangerouslySkipPermissions: boolean
+    model: string
+    prependCLISysprompt: boolean
+  },
+): AsyncGenerator<StreamingDelta> {
+  return aiQueryService.executeQueryStreaming(messages, systemPrompt, maxThinkingTokens, tools, signal, options)
 }
 
 /**
