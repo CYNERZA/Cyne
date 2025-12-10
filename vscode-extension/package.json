@@ -2,7 +2,7 @@
   "name": "cyne-vscode",
   "displayName": "Cyne - AI Coding Assistant",
   "description": "VS Code integration for Cyne CLI - enables AI-powered code editing directly from your terminal",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "publisher": "cynerza",
   "engines": {
     "vscode": "^1.85.0"
