@@ -50,6 +50,9 @@ export const MCPTool = {
     return <FallbackToolUseRejectedMessage />
   },
   renderToolResultMessage(output, { verbose }) {
+    // Get tool name from this.userFacingName if available
+    const toolName = typeof this.userFacingName === 'function' ? this.userFacingName() : 'MCP'
+
     if (Array.isArray(output)) {
       return (
         <Box flexDirection="column">
@@ -76,6 +79,7 @@ export const MCPTool = {
                 content={item.text}
                 lines={lines}
                 verbose={verbose}
+                toolName={toolName}
               />
             )
           })}
@@ -95,7 +99,7 @@ export const MCPTool = {
     }
 
     const lines = output.split('\n').length
-    return <OutputLine content={output} lines={lines} verbose={verbose} />
+    return <OutputLine content={output} lines={lines} verbose={verbose} toolName={toolName} />
   },
   renderResultForAssistant(content) {
     return content

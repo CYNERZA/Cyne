@@ -15,7 +15,7 @@ import { getTheme } from '../../utils/theme'
 import { BLACK_CIRCLE } from '../../constants/figures'
 import { ThinkTool } from '../../tools/ThinkTool/ThinkTool'
 import { AssistantThinkingMessage } from './AssistantThinkingMessage'
-import { EnhancedSpinner } from '../EnhancedSpinner'
+import { SmartToolInput } from '../SmartToolInput'
 import { useFadeIn } from '../../utils/animations'
 
 type Props = {
@@ -50,7 +50,7 @@ export function AssistantToolUseMessage({
   const tool = tools.find(_ => _.name === param.name)
   const theme = getTheme()
   const fadeOpacity = useFadeIn(theme.animations.fast)
-  
+
   if (!tool) {
     logError(`Tool ${param.name} not found`)
     return null
@@ -59,7 +59,7 @@ export function AssistantToolUseMessage({
     !inProgressToolUseIDs.has(param.id) && unresolvedToolUseIDs.has(param.id)
   const isError = erroredToolUseIDs.has(param.id)
   const isInProgress = inProgressToolUseIDs.has(param.id)
-  
+
   // Enhanced status-aware coloring
   let color: string | undefined
   if (isError) {
@@ -72,7 +72,7 @@ export function AssistantToolUseMessage({
 
   // TODO: Avoid this special case
   if (tool === ThinkTool) {
-    // params were already validated in query(), so this won't throe
+    // params were already validated in query(), so this won't throw
     const { thought } = ThinkTool.inputSchema.parse(param.input)
     return (
       <AssistantThinkingMessage
@@ -83,50 +83,53 @@ export function AssistantToolUseMessage({
   }
 
   const userFacingToolName = tool.userFacingName(param.input as never)
+  const hasInput = Object.keys(param.input as { [key: string]: unknown }).length > 0
+
   return (
     <Box
-      flexDirection="row"
-      justifyContent="space-between"
+      flexDirection="column"
       marginTop={addMargin ? 1 : 0}
       width="100%"
       opacity={fadeOpacity}
     >
-      <Box>
-        <Box
-          flexWrap="nowrap"
-          minWidth={userFacingToolName.length + (shouldShowDot ? 2 : 0)}
-        >
-          {shouldShowDot &&
-            (isQueued ? (
-              <Box minWidth={2}>
-                <Text color={color}>{BLACK_CIRCLE}</Text>
-              </Box>
-            ) : (
-              <ToolUseLoader
-                shouldAnimate={shouldAnimate}
-                isUnresolved={unresolvedToolUseIDs.has(param.id)}
-                isError={erroredToolUseIDs.has(param.id)}
-              />
-            ))}
-          <Text color={color} bold={!isQueued}>
-            {userFacingToolName}
-          </Text>
-        </Box>
-        <Box flexWrap="nowrap">
-          {Object.keys(param.input as { [key: string]: unknown }).length >
-            0 && (
-            <Text color={color}>
-              (
-              {tool.renderToolUseMessage(param.input as never, {
-                verbose,
-              })}
-              )
+      {/* Tool name with loader */}
+      <Box flexDirection="row" justifyContent="space-between">
+        <Box>
+          <Box
+            flexWrap="nowrap"
+            minWidth={userFacingToolName.length + (shouldShowDot ? 2 : 0)}
+          >
+            {shouldShowDot &&
+              (isQueued ? (
+                <Box minWidth={2}>
+                  <Text color={color}>{BLACK_CIRCLE}</Text>
+                </Box>
+              ) : (
+                <ToolUseLoader
+                  shouldAnimate={shouldAnimate}
+                  isUnresolved={unresolvedToolUseIDs.has(param.id)}
+                  isError={erroredToolUseIDs.has(param.id)}
+                />
+              ))}
+            <Text color={color} bold={!isQueued}>
+              {userFacingToolName}
             </Text>
-          )}
-          <Text color={color}>…</Text>
+            <Text color={color}>…</Text>
+          </Box>
         </Box>
+        <Cost costUSD={costUSD} durationMs={durationMs} debug={debug} />
       </Box>
-      <Cost costUSD={costUSD} durationMs={durationMs} debug={debug} />
+
+      {/* Tool inputs - use SmartToolInput for expandable display */}
+      {hasInput && (
+        <SmartToolInput
+          input={param.input as Record<string, unknown>}
+          toolName={userFacingToolName}
+          color={color}
+          verbose={verbose}
+        />
+      )}
     </Box>
   )
 }
+
