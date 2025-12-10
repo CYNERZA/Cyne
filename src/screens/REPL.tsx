@@ -35,6 +35,7 @@ import {
 } from '../query.js'
 import type { WrappedClient } from '../services/mcpClient'
 import type { Tool } from '../Tool'
+import { getTools } from '../tools'
 import { AutoUpdaterResult } from '../utils/autoUpdater'
 import { getGlobalConfig, saveGlobalConfig } from '../utils/config'
 import { logEvent } from '../services/statsig'
@@ -105,6 +106,18 @@ export function REPL({
   const [forkNumber, setForkNumber] = useState(
     getNextAvailableLogForkNumber(messageLogName, initialForkNumber, 0),
   )
+
+  // Dynamic tools state - allows reloading tools when think mode changes
+  const [currentTools, setCurrentTools] = useState<Tool[]>(tools)
+  
+  // Reload tools when forkNumber changes (happens after /clear or /think)
+  useEffect(() => {
+    const reloadTools = async () => {
+      const newTools = await getTools()
+      setCurrentTools(newTools)
+    }
+    reloadTools()
+  }, [forkNumber])
 
   const [
     forkConvoWithMessagesOnTheNextRender,
@@ -222,7 +235,7 @@ export function REPL({
           commands,
           forkNumber,
           messageLogName,
-          tools,
+          tools: currentTools,
           verbose,
           slowAndCapableModel: model,
           maxThinkingTokens: 0,
@@ -270,7 +283,7 @@ export function REPL({
             commands,
             forkNumber,
             messageLogName,
-            tools,
+            tools: currentTools,
             slowAndCapableModel: model,
             verbose,
             dangerouslySkipPermissions,
@@ -343,7 +356,7 @@ export function REPL({
           commands,
           forkNumber,
           messageLogName,
-          tools,
+          tools: currentTools,
           slowAndCapableModel: model,
           verbose,
           dangerouslySkipPermissions,
@@ -470,7 +483,7 @@ export function REPL({
               message={_}
               messages={normalizedMessages}
               addMargin={true}
-              tools={tools}
+              tools={currentTools}
               verbose={verbose}
               debug={debug}
               erroredToolUseIDs={erroredToolUseIDs}
@@ -523,7 +536,7 @@ export function REPL({
   }, [
     forkNumber,
     normalizedMessages,
-    tools,
+    currentTools,
     verbose,
     debug,
     erroredToolUseIDs,
@@ -568,7 +581,7 @@ export function REPL({
             }}
             verbose={verbose}
             normalizedMessages={normalizedMessages}
-            tools={tools}
+            tools={currentTools}
             debug={debug}
             erroredToolUseIDs={erroredToolUseIDs}
             inProgressToolUseIDs={inProgressToolUseIDs}
@@ -615,7 +628,7 @@ export function REPL({
                 commands={commands}
                 forkNumber={forkNumber}
                 messageLogName={messageLogName}
-                tools={tools}
+                tools={currentTools}
                 isDisabled={apiKeyStatus === 'invalid'}
                 isLoading={isLoading}
                 onQuery={onQuery}
@@ -679,7 +692,7 @@ export function REPL({
             })
           }}
           onEscape={() => setIsMessageSelectorVisible(false)}
-          tools={tools}
+          tools={currentTools}
         />
       )}
       {/** Fix occasional rendering artifact */}

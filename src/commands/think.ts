@@ -1,5 +1,7 @@
 import { Command } from '../commands'
 import { clearToolsCache } from '../tools'
+import type { Message } from '../query'
+import type { Tool } from '../Tool'
 
 /**
  * Think mode toggle command
@@ -31,15 +33,27 @@ const thinkCommand = {
   isEnabled: true,
   isHidden: false,
   
-  async call(args: string): Promise<string> {
+  async call(args: string, context: { 
+    options: {
+      commands: Command[]
+      tools: Tool[]
+      slowAndCapableModel: string
+    }
+    abortController: AbortController
+    setForkConvoWithMessagesOnTheNextRender: (forkConvoWithMessages: Message[]) => void
+  }): Promise<string> {
     const arg = args.trim().toLowerCase()
     
     if (arg === 'on' || arg === 'enable' || arg === '1') {
       setThinkMode(true)
-      return '🧠 Think mode ENABLED. I will now use deep reasoning for every response. (Please use /clear to start fresh with think mode active)'
+      // Auto-clear conversation to start fresh with think mode and trigger tool reload
+      context.setForkConvoWithMessagesOnTheNextRender([])
+      return '🧠 Think mode ENABLED. Conversation cleared and tools reloaded. Deep reasoning is now active!'
     } else if (arg === 'off' || arg === 'disable' || arg === '0') {
       setThinkMode(false)
-      return '⚡ Think mode DISABLED. Returning to normal mode.'
+      // Auto-clear conversation when disabling too
+      context.setForkConvoWithMessagesOnTheNextRender([])
+      return '⚡ Think mode DISABLED. Conversation cleared. Returning to normal mode.'
     } else if (arg === 'status' || arg === '') {
       const status = isThinkModeEnabled()
       return status 
