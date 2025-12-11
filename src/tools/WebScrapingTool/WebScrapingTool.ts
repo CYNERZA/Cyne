@@ -3,15 +3,15 @@ import { z } from 'zod'
 import { Text, Box } from 'ink'
 import { Tool, ValidationResult } from '../../Tool.js'
 import { applyMarkdown } from '../../utils/markdown'
-import { 
-  TOOL_NAME, 
+import {
+  TOOL_NAME,
   PROMPT,
   DEFAULT_FORMATS,
   SUPPORTED_FORMATS
 } from './prompt'
-import { 
-  performWebScraping, 
-  formatScrapedContent, 
+import {
+  performWebScraping,
+  formatScrapedContent,
   formatScrapedContentForUI,
   renderMarkdownContent,
   isValidUrl,
@@ -40,29 +40,29 @@ export interface WebScrapingOutput {
 
 export const WebScrapingTool: Tool<WebScrapingInput, WebScrapingOutput> = {
   name: TOOL_NAME,
-  
+
   async description() {
     return 'Extract and scrape content from web pages using the Cynerza crawler API'
   },
-  
+
   inputSchema,
-  
+
   isReadOnly: () => true,
-  
+
   async isEnabled() {
     return true
   },
-  
+
   needsPermissions: () => false,
-  
+
   userFacingName: (input?: WebScrapingInput) => {
     return input?.url ? `Scrape: "${input.url}"` : 'Web Scraping'
   },
-  
+
   async prompt() {
     return PROMPT
   },
-  
+
   async validateInput(input: WebScrapingInput): Promise<ValidationResult> {
     if (!input.url || input.url.trim().length === 0) {
       return {
@@ -70,7 +70,7 @@ export const WebScrapingTool: Tool<WebScrapingInput, WebScrapingOutput> = {
         message: 'URL cannot be empty'
       }
     }
-    
+
     const sanitizedUrl = sanitizeUrl(input.url.trim())
     if (!isValidUrl(sanitizedUrl)) {
       return {
@@ -78,7 +78,7 @@ export const WebScrapingTool: Tool<WebScrapingInput, WebScrapingOutput> = {
         message: 'Please provide a valid URL'
       }
     }
-    
+
     if (input.formats) {
       const invalidFormats = input.formats.filter(format => !SUPPORTED_FORMATS.includes(format))
       if (invalidFormats.length > 0) {
@@ -88,106 +88,62 @@ export const WebScrapingTool: Tool<WebScrapingInput, WebScrapingOutput> = {
         }
       }
     }
-    
+
     return {
       result: true,
       message: 'Valid scraping request'
     }
   },
-  
+
   async *call(input: WebScrapingInput): AsyncGenerator<any, WebScrapingOutput, any> {
-    try {
-      const sanitizedUrl = sanitizeUrl(input.url.trim())
-      const requestedFormats = input.formats || ['markdown']
-      
-      yield { 
-        type: 'status', 
-        message: `Scraping content from: ${sanitizedUrl}...` 
-      }
-      
-      const scrapedData = await performWebScraping(sanitizedUrl, requestedFormats)
-      
-      const output: WebScrapingOutput = {
-        success: true,
-        url: sanitizedUrl,
-        formats: requestedFormats,
-        data: scrapedData
-      }
-      
-      // Check if we got content
-      const hasContent = scrapedData && (
-        scrapedData.markdown || 
-        scrapedData.html || 
-        scrapedData.text || 
-        scrapedData.structured
-      )
-      
-      if (hasContent) {
-        const contentLength = scrapedData.markdown?.length || 
-                            scrapedData.html?.length || 
-                            scrapedData.text?.length || 0
-                            
-        yield { 
-          type: 'status', 
-          message: `Successfully scraped ${contentLength} characters from ${scrapedData.metadata?.title || sanitizedUrl}` 
-        }
-      } else {
-        yield { type: 'status', message: 'No content found on the page' }
-      }
-      
-      const formattedResults = WebScrapingTool.renderResultForAssistant(output)
-      
-      yield {
-        type: 'result',
-        data: output,
-        resultForAssistant: formattedResults
-      }
-      return output
-      
-    } catch (error: any) {
-      const errorOutput: WebScrapingOutput = {
-        success: false,
-        url: sanitizeUrl(input.url.trim()),
-        formats: input.formats || ['markdown'],
-        error: `Web scraping failed: ${error.message}`
-      }
-      
-      yield { 
-        type: 'error', 
-        message: errorOutput.error,
-        data: errorOutput,
-        resultForAssistant: WebScrapingTool.renderResultForAssistant(errorOutput)
-      }
-      return errorOutput
+    const sanitizedUrl = sanitizeUrl(input.url.trim())
+    const requestedFormats = input.formats || ['markdown']
+
+    const scrapedData = await performWebScraping(sanitizedUrl, requestedFormats)
+
+    const output: WebScrapingOutput = {
+      success: true,
+      url: sanitizedUrl,
+      formats: requestedFormats,
+      data: scrapedData
     }
+
+    const formattedResults = WebScrapingTool.renderResultForAssistant(output)
+
+    yield {
+      type: 'result',
+      data: output,
+      resultForAssistant: formattedResults
+    }
+    return output
   },
-  
+
   renderResultForAssistant(data: WebScrapingOutput): string {
     if (!data.success) {
       return `Scraping failed for ${data.url}: ${data.error}`
     }
-    
+
     if (!data.data) {
       return `No content found for ${data.url}`
     }
-    
+
     return formatScrapedContent(data.data, data.url, data.formats)
   },
-  
+
   renderToolUseMessage(input: WebScrapingInput, options: { verbose: boolean }): string {
     const formats = input.formats || ['markdown']
     const formatStr = formats.length > 1 ? ` (${formats.join(', ')})` : ''
     return `Scraping content from: ${input.url}${formatStr}`
   },
-  
+
   renderToolUseRejectedMessage(input?: WebScrapingInput): React.ReactNode {
     return React.createElement(
-      'div', 
-      {}, 
+      'div',
+      {},
       `Web scraping rejected for URL: "${input?.url || 'unknown'}"`
     )
   },
-  
+
   renderToolResultMessage(content: WebScrapingOutput, options: { verbose: boolean }): React.ReactNode {
     if (!content.success) {
       return React.createElement(
@@ -200,7 +156,7 @@ export const WebScrapingTool: Tool<WebScrapingInput, WebScrapingOutput> = {
         )
       )
     }
-    
+
     if (!content.data) {
       return React.createElement(
         Box,
@@ -212,10 +168,10 @@ export const WebScrapingTool: Tool<WebScrapingInput, WebScrapingOutput> = {
         )
       )
     }
-    
+
     // Format the scraped content for UI display (without metadata)
     const uiContent = formatScrapedContentForUI(content.data, content.formats)
-    
+
     // Always truncate for better UI experience, regardless of verbose setting
     let displayContent = uiContent
     const lines = uiContent.split('\n').filter(line => line.trim() !== '') // Remove empty lines
@@ -227,7 +183,7 @@ export const WebScrapingTool: Tool<WebScrapingInput, WebScrapingOutput> = {
     } else {
       displayContent = lines.join('\n')
     }
-    
+
     return React.createElement(
       Box,
       { flexDirection: 'column' },

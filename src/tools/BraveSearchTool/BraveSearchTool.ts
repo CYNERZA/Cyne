@@ -3,17 +3,17 @@ import { z } from 'zod'
 import { Text } from 'ink'
 import { Tool, ValidationResult } from '../../Tool.js'
 import { applyMarkdown } from '../../utils/markdown'
-import { 
-  TOOL_NAME, 
-  MAX_SEARCH_RESULTS, 
-  DEFAULT_SEARCH_COUNT, 
+import {
+  TOOL_NAME,
+  MAX_SEARCH_RESULTS,
+  DEFAULT_SEARCH_COUNT,
   DEFAULT_COUNTRY,
-  PROMPT 
+  PROMPT
 } from './prompt'
-import { 
-  performBraveSearch, 
-  createSearchResultOutput, 
-  renderMarkdownToTerminal 
+import {
+  performBraveSearch,
+  createSearchResultOutput,
+  renderMarkdownToTerminal
 } from './utils'
 
 export const inputSchema = z.strictObject({
@@ -43,29 +43,29 @@ export interface BraveSearchOutput {
 
 export const BraveSearchTool: Tool<BraveSearchInput, BraveSearchOutput> = {
   name: TOOL_NAME,
-  
+
   async description() {
     return 'Search the web using Brave Search API for real-time information'
   },
-  
+
   inputSchema,
-  
+
   isReadOnly: () => true,
-  
+
   async isEnabled() {
     return true
   },
-  
+
   needsPermissions: () => false,
-  
+
   userFacingName: (input?: BraveSearchInput) => {
     return input?.query ? `Search: "${input.query}"` : 'Web Search'
   },
-  
+
   async prompt() {
     return PROMPT
   },
-  
+
   async validateInput(input: BraveSearchInput): Promise<ValidationResult> {
     if (!input.query || input.query.trim().length === 0) {
       return {
@@ -73,98 +73,59 @@ export const BraveSearchTool: Tool<BraveSearchInput, BraveSearchOutput> = {
         message: 'Search query cannot be empty'
       }
     }
-    
+
     if (input.count && (input.count < 1 || input.count > MAX_SEARCH_RESULTS)) {
       return {
         result: false,
         message: `Count must be between 1 and ${MAX_SEARCH_RESULTS}`
       }
     }
-    
+
     return {
       result: true,
       message: 'Valid search query'
     }
   },
-  
+
   async *call(input: BraveSearchInput): AsyncGenerator<any, BraveSearchOutput, any> {
-    try {
-      const { query, count = DEFAULT_SEARCH_COUNT, country = DEFAULT_COUNTRY } = input
-      
-      // Validate count parameter
-      const validatedCount = Math.min(Math.max(count, 1), MAX_SEARCH_RESULTS)
-      
-      yield { 
-        type: 'status', 
-        message: `Searching Brave for: "${query}" (${validatedCount} results)...` 
-      }
-      
-      const searchResults = await performBraveSearch(query, validatedCount, country)
-      
-      const searchOutput: BraveSearchOutput = {
-        success: true,
-        query,
-        count: validatedCount,
-        country,
-        results: searchResults
-      }
-      
-      // Check if we got any results
-      const hasResults = searchResults && (
-        (searchResults.web_results && searchResults.web_results.length > 0) ||
-        (searchResults.faq_results && searchResults.faq_results.length > 0)
-      )
-      
-      if (hasResults) {
-        yield { 
-          type: 'status', 
-          message: `Found ${searchResults.total_results || 'some'} results` 
-        }
-      } else {
-        yield { type: 'status', message: 'No results found' }
-      }
-      
-      const formattedResults = BraveSearchTool.renderResultForAssistant(searchOutput)
-      
-      yield {
-        type: 'result',
-        data: searchOutput,
-        resultForAssistant: formattedResults
-      }
-      return searchOutput
-      
-    } catch (error: any) {
-      const errorOutput: BraveSearchOutput = {
-        success: false,
-        query: input.query,
-        count: input.count || DEFAULT_SEARCH_COUNT,
-        country: input.country || DEFAULT_COUNTRY,
-        error: `Brave search failed: ${error.message}`
-      }
-      
-      yield { 
-        type: 'error', 
-        message: errorOutput.error,
-        data: errorOutput,
-        resultForAssistant: BraveSearchTool.renderResultForAssistant(errorOutput)
-      }
-      return errorOutput
+    const { query, count = DEFAULT_SEARCH_COUNT, country = DEFAULT_COUNTRY } = input
+
+    // Validate count parameter
+    const validatedCount = Math.min(Math.max(count, 1), MAX_SEARCH_RESULTS)
+
+    const searchResults = await performBraveSearch(query, validatedCount, country)
+
+    const searchOutput: BraveSearchOutput = {
+      success: true,
+      query,
+      count: validatedCount,
+      country,
+      results: searchResults
     }
+
+    const formattedResults = BraveSearchTool.renderResultForAssistant(searchOutput)
+
+    yield {
+      type: 'result',
+      data: searchOutput,
+      resultForAssistant: formattedResults
+    }
+    return searchOutput
   },
-  
+
   renderResultForAssistant(data: BraveSearchOutput): string {
     return createSearchResultOutput(data)
   },
-  
+
   renderToolUseMessage(input: BraveSearchInput, options: { verbose: boolean }): string {
     const searchCount = input.count || DEFAULT_SEARCH_COUNT
     return `Searching web for: "${input.query}"${searchCount !== DEFAULT_SEARCH_COUNT ? ` (${searchCount} results)` : ''}`
   },
-  
+
   renderToolUseRejectedMessage(input?: BraveSearchInput): React.ReactNode {
     return React.createElement('div', {}, `Web search rejected for query: "${input?.query || 'unknown'}"`)
   },
-  
+
   renderToolResultMessage(content: BraveSearchOutput, options: { verbose: boolean }): React.ReactNode {
     if (!content.success) {
       return React.createElement(
@@ -173,12 +134,12 @@ export const BraveSearchTool: Tool<BraveSearchInput, BraveSearchOutput> = {
         `❌ Search failed: ${content.error}`
       )
     }
-    
+
     const hasResults = content.results && (
       (content.results.web_results && content.results.web_results.length > 0) ||
       (content.results.faq_results && content.results.faq_results.length > 0)
     )
-    
+
     if (!hasResults) {
       return React.createElement(
         Text,
@@ -186,10 +147,10 @@ export const BraveSearchTool: Tool<BraveSearchInput, BraveSearchOutput> = {
         `⚠️ No results found for "${content.query}"`
       )
     }
-    
+
     // Format the search results for display
     const formattedResults = createSearchResultOutput(content)
-    
+
     // If verbose mode is off and content is too long, truncate it
     let displayContent = formattedResults
     if (!options.verbose) {
@@ -201,7 +162,7 @@ export const BraveSearchTool: Tool<BraveSearchInput, BraveSearchOutput> = {
         displayContent = truncatedLines.join('\n') + `\n.......[${remainingLines}+] lines`
       }
     }
-    
+
     return React.createElement(
       Text,
       {},

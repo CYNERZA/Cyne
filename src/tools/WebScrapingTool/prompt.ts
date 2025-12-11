@@ -1,7 +1,6 @@
 export const TOOL_NAME = 'web_scraping'
 export const TOOL_NAME_FOR_PROMPT = 'WebScraping'
 
-export const CYNERZA_CRAWLER_API_URL = 'https://crawler.cynerza.com/v1/scrape'
 export const DEFAULT_FORMATS = ['markdown'] as const
 export const SUPPORTED_FORMATS = ['markdown', 'html', 'text', 'structured'] as const
 
