@@ -128,8 +128,8 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "new_version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Build
-        run: bun run build
+      - name: Build (Obfuscated Lite)
+        run: bun run build:obfuscated-light
 
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
