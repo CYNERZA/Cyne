@@ -16,31 +16,31 @@ try {
   // Fix the specific malformed optional chaining patterns that cause obfuscation issues
   const fixes = [
     // Fix complete lK.default patterns including the closing part
-    [/lK\.default\.color\?\.ansi \? \.color && \.color\.ansi \? \.color\.ansi\( : \(([AE])\)/g, 'lK.default.color?.ansi?.color ? lK.default.color.ansi.color.ansi($1) : $1'],
+    [/lK\.default\.color\?\.ansi \? \.color \&\& \.color\.ansi \? \.color\.ansi\( : \((\w+)\)/g, 'lK.default.color?.ansi?.color ? lK.default.color.ansi.color.ansi($1) : $1'],
 
     // Fix complete NJ.default patterns including the closing part
-    [/NJ\.default\.color\?\.ansi \? \.color && \.color\.ansi \? \.color\.ansi\( : \(([AE])\)/g, 'NJ.default.color?.ansi?.color ? NJ.default.color.ansi.color.ansi($1) : $1'],
+    [/NJ\.default\.color\?\.ansi \? \.color \&\& \.color\.ansi \? \.color\.ansi\( : \((\w+)\)/g, 'NJ.default.color?.ansi?.color ? NJ.default.color.ansi.color.ansi($1) : $1'],
 
     // Fix any remaining malformed patterns with variables
-    [/(\w+\.default)\.color\?\.ansi \? \.color && \.color\.ansi \? \.color\.ansi\( : \(([AE])\)/g, '$1.color?.ansi?.color ? $1.color.ansi.color.ansi($2) : $2'],
+    [/(\w+\.default)\.color\?\.ansi \? \.color \&\& \.color\.ansi \? \.color\.ansi\( : \((\w+)\)/g, '$1.color?.ansi?.color ? $1.color.ansi.color.ansi($2) : $2'],
 
-    // Fix direct calls to .color.ansi without optional chaining
-    [/(\w+\.default)\.color\.ansi\(/g, '$1.color?.ansi ? $1.color.ansi( : ('],
+    // Fix pattern: XX.default.color?.ansi ? XX.default.color.ansi( : (VAR) - complete the ternary
+    [/(\w+\.default)\.color\?\.ansi \? \1\.color\.ansi\( : \((\w+)\)/g, '$1.color?.ansi ? $1.color.ansi($2) : $2'],
 
-    // Fix the new pattern found: pK.default.color?.ansi ? pK.default.color.ansi( : (E)
-    [/(\w+\.default)\.color\?\.ansi \? \1\.color\.ansi\( : \(([AE])\)/g, '$1.color?.ansi ? $1.color.ansi($2) : $2'],
+    // Fix pattern: lt.color.ansi( : (D) - incomplete ternary with any variable
+    [/(\w+)\.color\.ansi\( : \((\w+)\)/g, '$1.color?.ansi ? $1.color.ansi($2) : $2'],
 
-    // Fix incomplete patterns like: .color.ansi( : (E)
-    [/\.color\.ansi\( : \(([AE])\)/g, '.color?.ansi ? .color.ansi($1) : $1'],
+    // Fix incomplete patterns like: .color.ansi( : (VAR)
+    [/\.color\.ansi\( : \((\w+)\)/g, '.color?.ansi($1)'],
 
-    // Fix nested patterns created by previous fixes: .ansi( : ( : (E)
-    [/\.ansi\( : \( : \(([AE])\)/g, '.ansi($1)'],
+    // Fix nested patterns created by previous fixes: .ansi( : ( : (VAR)
+    [/\.ansi\( : \( : \((\w+)\)/g, '.ansi($1)'],
 
-    // Fix deeply nested patterns: .ansi( : ( : ( : (E)
-    [/\.ansi\( : \( : \( : \(([AE])\)/g, '.ansi($1)'],
+    // Fix deeply nested patterns: .ansi\( : \( : \( : \(VAR\)
+    [/\.ansi\( : \( : \( : \((\w+)\)/g, '.ansi($1)'],
 
     // Fix any remaining pattern of multiple nested : ( : ( : (
-    [/\( : \)+\(([AE])\)/g, '($1)']
+    [/\( : \)+\((\w+)\)/g, '($1)']
   ];
 
   let fixCount = 0;

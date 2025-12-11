@@ -28,11 +28,28 @@ const presets = {
     stringArrayCallsTransform: false,
     stringArrayEncoding: [],
     stringArrayThreshold: 0.5,
+    stringArrayWrappersChainedCalls: false,
     transformObjectKeys: false,
     unicodeEscapeSequence: false,
+    // Exclude strings with Unicode characters that break when obfuscated
+    reservedStrings: [
+      '\\\\u',     // Unicode escape sequences
+      '[\\u0080-\\uffff]',  // Any string with high Unicode chars
+      'À-Ö',      // Unicode range patterns in regex
+      'Ø-ö',
+      'ø-˿',
+      'Ͱ-ͽ',
+      'Ϳ-῿',
+      '‌-‍',
+      '⁰-↏',
+      'Ⰰ-⿯',
+      '、-퟿',
+      '豈-﷏',
+      'ﷰ-��'
+    ],
     target: 'node'
   },
-  
+
   balanced: {
     // Balanced obfuscation - good protection with reasonable size
     compact: true,
@@ -55,7 +72,7 @@ const presets = {
     unicodeEscapeSequence: false,
     target: 'node'
   },
-  
+
   heavy: {
     // Maximum obfuscation - best protection but larger file
     compact: true,
@@ -100,27 +117,27 @@ const commonReservedNames = [
 try {
   // Read the built file
   const sourceCode = readFileSync(resolve(inputFile), 'utf8');
-  
+
   // Get configuration for selected preset
   const config = presets[preset];
   if (!config) {
     throw new Error(`Unknown preset: ${preset}. Available: light, balanced, heavy`);
   }
-  
+
   // Add reserved names to config
   config.reservedNames = commonReservedNames;
-  
+
   // Obfuscate
   const obfuscationResult = JavaScriptObfuscator.obfuscate(sourceCode, config);
 
   // Write obfuscated code
   writeFileSync(resolve(outputFile), obfuscationResult.getObfuscatedCode());
-  
+
   console.log(`✅ Obfuscated code written to ${outputFile}`);
   console.log(`📊 Original size: ${(sourceCode.length / 1024).toFixed(2)} KB`);
   console.log(`📊 Obfuscated size: ${(obfuscationResult.getObfuscatedCode().length / 1024).toFixed(2)} KB`);
   console.log(`📈 Size ratio: ${((obfuscationResult.getObfuscatedCode().length / sourceCode.length) * 100).toFixed(1)}%`);
-  
+
 } catch (error) {
   console.error('❌ Obfuscation failed:', error.message);
   process.exit(1);
