@@ -16,6 +16,7 @@ import pr_comments from './commands/pr_comments'
 import releaseNotes from './commands/release-notes'
 import review from './commands/review'
 import terminalSetup from './commands/terminalSetup'
+import theme from './commands/theme'
 import think from './commands/think'
 import { windowsInstaller, windowsUninstaller } from './commands/windowsInstaller'
 import { Tool } from './Tool'
@@ -98,6 +99,7 @@ const COMMANDS = memoize((): Command[] => [
   bug,
   review,
   terminalSetup,
+  theme,
   think,
   windowsInstaller,
   windowsUninstaller,

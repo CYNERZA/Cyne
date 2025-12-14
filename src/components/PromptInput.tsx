@@ -99,12 +99,14 @@ function PromptInput({
   const [placeholder, setPlaceholder] = useState('')
   const [cursorOffset, setCursorOffset] = useState<number>(input.length)
   const [pastedText, setPastedText] = useState<string | null>(null)
+  const [showShortcuts, setShowShortcuts] = useState(false)
 
-  // useEffect(() => {
-  //   getExampleCommands().then(commands => {
-  //     setPlaceholder(`Try "${sample(commands)}"`)
-  //   })
-  // }, [])
+  useEffect(() => {
+    getExampleCommands().then(commands => {
+      const cmd = sample(commands)
+      setPlaceholder(`Try "${cmd}"`)
+    })
+  }, [])
   const { columns } = useTerminalSize()
 
   const commandWidth = useMemo(
@@ -126,6 +128,13 @@ function PromptInput({
 
   const onChange = useCallback(
     (value: string) => {
+      // Toggle shortcuts panel when ? is typed alone
+      if (value === '?') {
+        setShowShortcuts(s => !s)
+        onInputChange('')
+        return
+      }
+      setShowShortcuts(false)
       if (value.startsWith('!')) {
         onModeChange('bash')
         return
@@ -276,34 +285,46 @@ function PromptInput({
   const textInputColumns = useTerminalSize().columns - 6
   const tokenUsage = useMemo(() => countTokens(messages), [messages])
   const theme = getTheme()
+  
+  const [borderColorIndex, setBorderColorIndex] = useState(0)
+  
+  useEffect(() => {
+    if (isLoading) {
+      const interval = setInterval(() => {
+        setBorderColorIndex(prev => (prev + 1) % theme.gradients.primary.length)
+      }, 300)
+      return () => clearInterval(interval)
+    }
+  }, [isLoading, theme.gradients.primary.length])
+  
+  const getBorderColor = () => {
+    if (mode === 'bash') return theme.bashBorder
+    if (isLoading) return theme.gradients.primary[borderColorIndex]
+    return theme.accent.primary
+  }
 
   return (
-    <Box flexDirection="column">
-      <Box
-        alignItems="flex-start"
-        justifyContent="flex-start"
-        borderColor={mode === 'bash' ? theme.bashBorder : theme.secondaryBorder}
-        borderDimColor
-        borderStyle="round"
-        marginTop={1}
-        width="100%"
-      >
-        <Box
-          alignItems="flex-start"
-          alignSelf="flex-start"
-          flexWrap="nowrap"
-          justifyContent="flex-start"
-          width={3}
-        >
+    <Box flexDirection="column" marginTop={1}>
+      {/* Top horizontal line separator - responsive to window width */}
+      <Box>
+        <Text color={theme.secondaryText}>{'─'.repeat(columns - 2)}</Text>
+      </Box>
+      
+      {/* Claude Code style input with > prompt */}
+      <Box flexDirection="row" alignItems="flex-start" marginY={0}>
+        {/* Prompt symbol */}
+        <Box width={2}>
           {mode === 'bash' ? (
-            <Text color={theme.bashBorder}>&nbsp;!&nbsp;</Text>
+            <Text color={theme.bashBorder} bold>$</Text>
+          ) : isLoading ? (
+            <Text color={theme.gradients.primary[borderColorIndex]} bold>◈</Text>
           ) : (
-            <Text color={isLoading ? theme.secondaryText : undefined}>
-              &nbsp;&gt;&nbsp;
-            </Text>
+            <Text color={theme.text} bold>›</Text>
           )}
         </Box>
-        <Box paddingRight={1}>
+        
+        {/* Input area */}
+        <Box flexGrow={1}>
           <TextInput
             multiline
             onSubmit={onSubmit}
@@ -326,63 +347,50 @@ function PromptInput({
           />
         </Box>
       </Box>
-      {suggestions.length === 0 && (
-        <Box
-          flexDirection="row"
-          justifyContent="space-between"
-          paddingX={2}
-          paddingY={0}
-        >
-          <Box justifyContent="flex-start" gap={1}>
-            {exitMessage.show ? (
-              <Text dimColor>Press {exitMessage.key} again to exit</Text>
-            ) : message.show ? (
-              <Text dimColor>{message.text}</Text>
-            ) : (
-              <>
-                <Text
-                  color={mode === 'bash' ? theme.bashBorder : undefined}
-                  dimColor={mode !== 'bash'}
-                >
-                  ! for terminal mode
-                </Text>
-                <Text dimColor>· / for commands · esc for options</Text>
-              </>
-            )}
-          </Box>
-          <SentryErrorBoundary>
-            <Box justifyContent="flex-end" gap={1}>
-              {!autoUpdaterResult &&
-                !isAutoUpdating &&
-                !debug &&
-                tokenUsage < WARNING_THRESHOLD && (
-                  <Text dimColor>
-                    {terminalSetup.isEnabled &&
-                    isShiftEnterKeyBindingInstalled()
-                      ? 'shift + ⏎ for newline'
-                      : '\\⏎ for newline'}
-                  </Text>
-                )}
-              {debug && (
-                <Text dimColor>
-                  {`${countTokens(messages)} tokens (${
-                    Math.round(
-                      (10000 * (countCachedTokens(messages) || 1)) /
-                        (countTokens(messages) || 1),
-                    ) / 100
-                  }% cached)`}
-                </Text>
-              )}
-              <TokenWarning tokenUsage={tokenUsage} />
-              {/* <AutoUpdater
-                debug={debug}
-                onAutoUpdaterResult={onAutoUpdaterResult}
-                autoUpdaterResult={autoUpdaterResult}
-                isUpdating={isAutoUpdating}
-                onChangeIsUpdating={setIsAutoUpdating}
-              /> */}
+
+      {/* Bottom horizontal line separator - responsive to window width */}
+      <Box>
+        <Text color={theme.secondaryText}>{'─'.repeat(columns - 2)}</Text>
+      </Box>
+      
+      {/* Keyboard Shortcuts Panel */}
+      {showShortcuts && suggestions.length === 0 && (
+        <Box flexDirection="column" paddingX={2} paddingY={1}>
+          <Text color={theme.cynerza} bold>⌨ Keyboard Shortcuts</Text>
+          <Box marginTop={1} flexDirection="column" gap={0}>
+            <Box gap={4}>
+              <Box width={30}><Text color={theme.accent.secondary}>↑/↓</Text><Text color={theme.text}> History navigation</Text></Box>
+              <Box width={30}><Text color={theme.accent.secondary}>Ctrl+C</Text><Text color={theme.text}> Cancel/Exit</Text></Box>
             </Box>
-          </SentryErrorBoundary>
+            <Box gap={4}>
+              <Box width={30}><Text color={theme.accent.secondary}>Esc</Text><Text color={theme.text}> Options/Cancel</Text></Box>
+              <Box width={30}><Text color={theme.accent.secondary}>Tab</Text><Text color={theme.text}> Autocomplete</Text></Box>
+            </Box>
+            <Box gap={4}>
+              <Box width={30}><Text color={theme.accent.secondary}>!</Text><Text color={theme.text}> Bash mode</Text></Box>
+              <Box width={30}><Text color={theme.accent.secondary}>/</Text><Text color={theme.text}> Commands</Text></Box>
+            </Box>
+            <Box gap={4}>
+              <Box width={30}><Text color={theme.accent.secondary}>Ctrl+Shift+I</Text><Text color={theme.text}> Expand inputs</Text></Box>
+              <Box width={30}><Text color={theme.accent.secondary}>Ctrl+Shift+R</Text><Text color={theme.text}> Expand outputs</Text></Box>
+            </Box>
+          </Box>
+          <Box marginTop={1}>
+            <Text color={theme.secondaryText}>Press ? again to close</Text>
+          </Box>
+        </Box>
+      )}
+
+      {/* Shortcuts hint below input */}
+      {!showShortcuts && suggestions.length === 0 && (
+        <Box paddingLeft={2} marginTop={0}>
+          {exitMessage.show ? (
+            <Text dimColor>Press {exitMessage.key} again to exit</Text>
+          ) : message.show ? (
+            <Text dimColor>{message.text}</Text>
+          ) : (
+            <Text color={theme.secondaryText}>? for shortcuts</Text>
+          )}
         </Box>
       )}
       {suggestions.length > 0 && (

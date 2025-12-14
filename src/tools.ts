@@ -34,6 +34,9 @@ import { ReadTerminalTool } from './tools/ReadTerminalTool/ReadTerminalTool'
 // New task management tools
 import { TaskBoundaryTool, NotifyUserTool, BrainTool } from './tools/TaskTool'
 
+// Multi-agent orchestration tool
+import { MultiPromptTool } from './tools/MultiPromptTool/MultiPromptTool'
+
 const ANT_ONLY_TOOLS = [MemoryReadTool, MemoryWriteTool]
 
 // Function to avoid circular dependencies that break bun
@@ -66,6 +69,8 @@ export const getAllTools = (): Tool[] => {
     TaskBoundaryTool,
     NotifyUserTool,
     BrainTool,
+    // Multi-agent orchestration
+    MultiPromptTool,
     ...VSCODE_TOOLS,
     ...ANT_ONLY_TOOLS,
   ]

@@ -1,10 +1,19 @@
 import { logEvent } from '../services/statsig'
+
+interface ActiveAgent {
+  id: string
+  agentId: string
+  progress: number
+  status: 'pending' | 'running' | 'complete' | 'error'
+}
+
 type SessionState = {
   modelErrors: Record<string, unknown>
   currentError: string | null
   currentApiKeyIndex: Record<'small' | 'large', number>
   failedApiKeys: Record<'small' | 'large', string[]>
   streamingTokens: number
+  activeAgents: ActiveAgent[]
 }
 
 const isDebug =
@@ -18,7 +27,8 @@ const sessionState: SessionState = {
   currentApiKeyIndex: { small: -1, large: -1 },
   failedApiKeys: { small: [], large: [] },
   streamingTokens: 0,
-} as const
+  activeAgents: [],
+}
 
 function setSessionState<K extends keyof SessionState>(
   key: K,

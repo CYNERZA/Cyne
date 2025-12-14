@@ -6,111 +6,93 @@ import { sample } from 'lodash-es'
 import { getSessionState } from '../utils/sessionState'
 
 /**
- * Alternative Implementation: Enhanced Spinner Patterns
- * Same functionality with different pattern organization and naming
+ * Enhanced Spinner with Multi-Agent Visualization Support
+ * Shows animated spinner and optionally multi-agent progress when active
  */
-const CYNER_ANIMATION_PATTERNS = [
-  // Alternative pattern: Large rotating dots with different arrangement
-  ['●   ', ' ●  ', '  ● ', '   ●', '  ● ', ' ●  '],
-  // Alternative pattern: Enhanced pulsing circles
-  ['○○○ ', '●○○ ', '●●○ ', '●●● ', '○●● ', '○○● ', '○○○ '],
-  // Alternative pattern: Progressive loading bars
-  ['▱▱▱▱', '▰▱▱▱', '▰▰▱▱', '▰▰▰▱', '▰▰▰▰', '▱▰▰▰', '▱▱▰▰', '▱▱▱▰'],
-  // Alternative pattern: Directional arrows
-  ['→   ', ' ↘  ', '  ↓ ', '   ↙', '    ←', '   ↖', '  ↑ ', ' ↗  '],
-  // Alternative pattern: Bouncing animation
-  ['●   ', ' ●  ', '  ● ', '   ●', '  ● ', ' ●  '],
-  // Alternative pattern: Pulse visualization
-  ['◯   ', '◉   ', '●   ', '◉   ', '◯   ', '    '],
-  // Alternative pattern: Progressive dots
-  ['.   ', '..  ', '... ', '....', ' ...', '  ..', '   .', '    '],
-  // Alternative pattern: Star rotation effect
-  ['✦   ', ' ✧  ', '  ✦ ', '   ✧', '  ✦ ', ' ✧  '],
-  // Alternative pattern: Wave visualization
-  ['▁▁▁▁', '▂▁▁▁', '▃▂▁▁', '▄▃▂▁', '▅▄▃▂', '▆▅▄▃', '▇▆▅▄', '█▇▆▅', '▇▆▅▄', '▆▅▄▃', '▅▄▃▂', '▄▃▂▁', '▃▂▁▁', '▂▁▁▁'],
-  // Alternative pattern: Orbital motion
-  ['◐   ', ' ◓  ', '  ◑ ', '   ◒', '  ◑ ', ' ◓  '],
-  // Alternative pattern: Gear mechanism
-  ['⚙   ', ' ⚙  ', '  ⚙ ', '   ⚙', '  ⚙ ', ' ⚙  '],
-  // Alternative pattern: DNA helix structure
-  ['╱   ', ' ╲  ', '  ╱ ', '   ╲', '  ╱ ', ' ╲  '],
-  // Alternative pattern: Block progression
-  ['█   ', '▉   ', '▊   ', '▋   ', '▌   ', '▍   ', '▎   ', '▏   '],
-  // Alternative pattern: Heart animation
-  ['♡   ', ' ♥  ', '  ♡ ', '   ♥', '  ♡ ', ' ♥  '],
-]
 
-/**
- * Alternative Implementation: Processing Status Messages
- * Same functionality with enhanced message variety and Cyne-specific terms
- */
+// Agent configuration for multi-agent display
+const AGENT_ICONS: Record<string, { icon: string; color: string; name: string }> = {
+  security: { icon: '🔒', color: '#ff6b6b', name: 'Security' },
+  performance: { icon: '⚡', color: '#ffd93d', name: 'Performance' },
+  architect: { icon: '🏗️', color: '#6bcb77', name: 'Architect' },
+  analyst: { icon: '🔍', color: '#4d96ff', name: 'Analyst' },
+  documentation: { icon: '📝', color: '#9d65c9', name: 'Docs' },
+  default: { icon: '🤖', color: '#888888', name: 'Agent' },
+}
+
+// Context-specific spinner patterns
+const SPINNER_PATTERNS = {
+  // Default thinking spinner
+  default: { frames: ['◐', '◓', '◑', '◒'], interval: 120 },
+  
+  // Tool execution spinners
+  triangles: { frames: ['◢', '◣', '◤', '◥'], interval: 120 },
+  clock: { frames: ['◴', '◷', '◶', '◵'], interval: 120 },
+  bounce: { frames: ['⠁', '⠂', '⠄', '⠂'], interval: 120 },
+  boxBounce: { frames: ['▖', '▘', '▝', '▗'], interval: 120 },
+  boxBounce2: { frames: ['▌', '▀', '▐', '▄'], interval: 100 },
+  noise: { frames: ['▓', '▒', '░'], interval: 100 },
+  toggle: { frames: ['⦾', '⦿'], interval: 80 },
+  arrows: { frames: ['⊶', '⊷'], interval: 250 },
+  bouncingBall: { 
+    frames: ['( ●    )', '(  ●   )', '(   ●  )', '(    ● )', '(     ●)', '(    ● )', '(   ●  )', '(  ●   )', '( ●    )', '(●     )'],
+    interval: 80 
+  },
+}
+
+// Pick a random tool spinner
+const TOOL_SPINNERS = ['triangles', 'clock', 'bounce', 'boxBounce', 'boxBounce2', 'noise', 'toggle', 'arrows'] as const
+type SpinnerType = keyof typeof SPINNER_PATTERNS
+
+// Subtle gradient - just 2-3 colors, not too colorful
+const CYNE_GRADIENT_COLORS = ['#9ACD32', '#7CBA1D', '#9ACD32'] // Green pulse
+
+// Keep variety of processing messages
 const CYNER_PROCESSING_MESSAGES = [
-  'Bubbling',
-  'Cyneing',
-  'Processing',
-  'Computing',
-  'Thinking',
-  'Optimizing',
+  'Analyzing',
   'Synthesizing',
-  'Calculating',
-  'Generating',
-  'Interpreting',
+  'Processing',
+  'Thinking',
   'Evaluating',
-  'Orchestrating',
-  'Architecting',
-  'Constructing',
-  'Assembling',
-  'Debugging',
-  'Refactoring',
-  'Compiling',
-  'Deploying',
-  'Transforming',
-  'Innovating',
-  'Engineering',
-  'Developing',
   'Building',
-  'Creating',
-  'Designing',
-  'Implementing',
-  'Executing',
-  'Rendering',
-  'Parsing',
-  'Indexing',
-  'Searching',
-  'Scanning',
-  'Mining',
-  'Learning',
-  'Adapting',
-  'Evolving',
-  'Upgrading',
-  'Enhancing',
-  'Accelerating',
-  'Streamlining',
-  'Automating',
-  'Integrating',
-  'Synchronizing',
-  'Validating',
-  'Verifying',
-  'Testing',
-  'Benchmarking',
-  'Profiling',
-  'Monitoring',
+  'Computing',
+  'Inferring',
 ]
 
-/**
- * Alternative Implementation: Spinner State Manager
- * Different approach to state management while preserving functionality
- */
+const MULTI_AGENT_MESSAGES = [
+  'Multi-Agent Analysis',
+  'Coordinating Agents',
+  'Parallel Processing',
+  'Synthesizing Insights',
+  'Consensus Building',
+]
+
+interface AgentStatus {
+  id: string
+  agentId: string
+  progress: number
+  status: 'pending' | 'running' | 'complete' | 'error'
+}
+
+// Get all spinner pattern keys
+const ALL_SPINNER_KEYS = Object.keys(SPINNER_PATTERNS) as SpinnerType[]
+
 class CynerSpinnerStateManager {
   private patternFrame: number = 0
+  private colorFrame: number = 0
   private elapsedTime: number = 0
   private startTime: number = Date.now()
-  private currentPattern: string[]
   private message: string
+  private spinnerType: SpinnerType
+  private currentPattern: { frames: string[], interval: number }
 
-  constructor() {
-    this.currentPattern = sample(CYNER_ANIMATION_PATTERNS) || CYNER_ANIMATION_PATTERNS[0]
-    this.message = sample(CYNER_PROCESSING_MESSAGES) || 'Processing'
+  constructor(isMultiAgent: boolean = false) {
+    this.message = isMultiAgent 
+      ? sample(MULTI_AGENT_MESSAGES) || 'Multi-Agent Analysis'
+      : sample(CYNER_PROCESSING_MESSAGES) || 'Processing'
+    // Randomly pick a spinner type
+    this.spinnerType = sample(ALL_SPINNER_KEYS) || 'default'
+    this.currentPattern = SPINNER_PATTERNS[this.spinnerType]
   }
 
   getPatternFrame(): number {
@@ -118,15 +100,20 @@ class CynerSpinnerStateManager {
   }
 
   incrementPatternFrame(): void {
-    this.patternFrame = (this.patternFrame + 1) % this.currentPattern.length
-  }
-
-  getCurrentPattern(): string[] {
-    return this.currentPattern
+    this.patternFrame = (this.patternFrame + 1) % this.currentPattern.frames.length
+    this.colorFrame = (this.colorFrame + 1) % CYNE_GRADIENT_COLORS.length
   }
 
   getCurrentFrame(): string {
-    return this.currentPattern[this.patternFrame]
+    return this.currentPattern.frames[this.patternFrame]
+  }
+
+  getInterval(): number {
+    return this.currentPattern.interval
+  }
+
+  getCurrentColor(): string {
+    return CYNE_GRADIENT_COLORS[this.colorFrame]
   }
 
   getMessage(): string {
@@ -143,13 +130,52 @@ class CynerSpinnerStateManager {
 }
 
 /**
- * Alternative Implementation: Enhanced Spinner Component
- * Same functionality with different implementation patterns
+ * Agent Progress Bar Component
+ */
+function AgentProgressBar({ 
+  agentId, 
+  progress, 
+  status 
+}: AgentStatus): React.ReactNode {
+  const theme = getTheme()
+  const config = AGENT_ICONS[agentId] || AGENT_ICONS.default
+  
+  const width = 10
+  const filled = Math.round((progress / 100) * width)
+  const empty = width - filled
+  
+  const statusIcon = status === 'complete' ? '✓' :
+                     status === 'error' ? '✗' :
+                     status === 'running' ? '●' : '○'
+  
+  const statusColor = status === 'complete' ? '#6bcb77' :
+                      status === 'error' ? '#ff6b6b' :
+                      status === 'running' ? config.color : theme.secondaryText
+
+  return (
+    <Box flexDirection="row" gap={1}>
+      <Text color={config.color}>{config.icon}</Text>
+      <Text color={theme.text}>{config.name.padEnd(6)}</Text>
+      <Text color={statusColor}>{statusIcon}</Text>
+      <Text color={config.color}>{'█'.repeat(filled)}</Text>
+      <Text color={theme.secondaryText}>{'░'.repeat(empty)}</Text>
+      <Text color={theme.secondaryText}>{progress.toString().padStart(3)}%</Text>
+    </Box>
+  )
+}
+
+/**
+ * Enhanced Spinner Component with Multi-Agent Support
  */
 export function Spinner(): React.ReactNode {
-  const [stateManager] = useState(() => new CynerSpinnerStateManager())
+  const theme = getTheme()
+  
+  // Check for multi-agent activity
+  const [activeAgents, setActiveAgents] = useState<AgentStatus[]>([])
+  const isMultiAgent = activeAgents.length > 0
+  
+  const [stateManager] = useState(() => new CynerSpinnerStateManager(isMultiAgent))
   const [patternFrame, setPatternFrame] = useState(0)
-  const [currentPattern] = useState(() => stateManager.getCurrentPattern())
   const [elapsedTime, setElapsedTime] = useState(0)
   const [tokenCount, setTokenCount] = useState(0)
   const message = useRef(stateManager.getMessage())
@@ -157,14 +183,21 @@ export function Spinner(): React.ReactNode {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setPatternFrame(pf => (pf + 1) % currentPattern.length)
+      setPatternFrame(pf => (pf + 1) % SPINNER_PATTERNS.default.frames.length)
       stateManager.incrementPatternFrame()
-      // Refresh token count from session state
+      
+      // Refresh token count and agent status from session state
       setTokenCount(getSessionState('streamingTokens') || 0)
-    }, 200) // Enhanced timing for better visibility
+      
+      // Check for active agents
+      const agents = getSessionState('activeAgents') as AgentStatus[] | undefined
+      if (agents && agents.length > 0) {
+        setActiveAgents(agents)
+      }
+    }, 200)
 
     return () => clearInterval(timer)
-  }, [currentPattern.length, stateManager])
+  }, [stateManager])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -176,50 +209,193 @@ export function Spinner(): React.ReactNode {
     return () => clearInterval(timer)
   }, [stateManager])
 
+  // Multi-Agent Visualization
+  if (isMultiAgent) {
+    const completedAgents = activeAgents.filter(a => a.status === 'complete').length
+    const totalProgress = Math.round(
+      activeAgents.reduce((sum, a) => sum + a.progress, 0) / activeAgents.length
+    )
+    const currentColor = CYNE_GRADIENT_COLORS[patternFrame % CYNE_GRADIENT_COLORS.length]
+
+    return (
+      <Box flexDirection="column" marginTop={1}>
+        {/* Header */}
+        <Box flexDirection="row" gap={2}>
+          <Text color={currentColor} bold>
+            {SPINNER_PATTERNS.default.frames[patternFrame % SPINNER_PATTERNS.default.frames.length]}
+          </Text>
+          <Text color={currentColor} bold>
+            Multi-Agent Analysis
+          </Text>
+          <Text color={theme.secondaryText}>
+            {completedAgents}/{activeAgents.length} complete · {totalProgress}%
+          </Text>
+        </Box>
+
+        {/* Agent Progress Bars */}
+        <Box flexDirection="column" marginLeft={2} marginTop={1}>
+          {activeAgents.map(agent => (
+            <AgentProgressBar
+              key={agent.id}
+              id={agent.id}
+              agentId={agent.agentId || agent.id}
+              progress={agent.progress}
+              status={agent.status}
+            />
+          ))}
+        </Box>
+
+        {/* Footer */}
+        <Box flexDirection="row" marginTop={1} gap={2}>
+          <Text color={theme.secondaryText}>
+            ({elapsedTime}s · <Text bold color={currentColor}>esc</Text> to interrupt)
+          </Text>
+          {tokenCount > 0 && (
+            <Text color={currentColor}>· {tokenCount} tokens</Text>
+          )}
+        </Box>
+      </Box>
+    )
+  }
+
+  // Standard Spinner with subtle gradient - uses random spinner from stateManager
+  const currentColor = stateManager.getCurrentColor()
+  const spinnerIcon = stateManager.getCurrentFrame()
+  
   return (
     <Box flexDirection="row" marginTop={1}>
-      <Box flexWrap="nowrap" height={1} width={6}>
-        <Text color={getTheme().cynerza} bold>
-          {currentPattern[patternFrame]}
-        </Text>
-      </Box>
-      <Text color={getTheme().cynerza} bold>{message.current}… </Text>
-      <Text color={getTheme().secondaryText}>
-        ({elapsedTime}s · <Text bold color={getTheme().cynerza}>esc</Text> to interrupt)
+      <Text color={currentColor} bold>
+        {spinnerIcon}{' '}
+      </Text>
+      <Text color={currentColor} bold>{message.current}… </Text>
+      <Text color={theme.secondaryText}>
+        ({elapsedTime}s · <Text bold color={currentColor}>esc</Text> to interrupt)
       </Text>
       {tokenCount > 0 && (
-        <Text color={getTheme().cynerza}> · {tokenCount} tokens</Text>
+        <Text color={currentColor}> · {tokenCount} tokens</Text>
       )}
-      <Text color={getTheme().secondaryText}>
-        · {getSessionState('currentError')}
-      </Text>
     </Box>
   )
 }
 
 /**
- * Alternative Implementation: Simple Spinner Component
- * Same functionality with enhanced state management
+ * Simple Spinner Component
  */
 export function SimpleSpinner(): React.ReactNode {
-  const [stateManager] = useState(() => new CynerSpinnerStateManager())
-  const [currentPattern] = useState(() => stateManager.getCurrentPattern())
   const [patternFrame, setPatternFrame] = useState(0)
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setPatternFrame(pf => (pf + 1) % currentPattern.length)
-      stateManager.incrementPatternFrame()
+      setPatternFrame(pf => (pf + 1) % SPINNER_PATTERNS.default.frames.length)
     }, 200)
 
     return () => clearInterval(timer)
-  }, [currentPattern.length, stateManager])
+  }, [])
+
+  const currentColor = CYNE_GRADIENT_COLORS[patternFrame % CYNE_GRADIENT_COLORS.length]
 
   return (
-    <Box flexWrap="nowrap" height={1} width={6}>
-      <Text color={getTheme().cynerza} bold>
-        {currentPattern[patternFrame]}
-      </Text>
+    <Text color={currentColor} bold>
+      {SPINNER_PATTERNS.default.frames[patternFrame % SPINNER_PATTERNS.default.frames.length]}
+    </Text>
+  )
+}
+
+/**
+ * Multi-Agent Spinner - Explicit multi-agent visualization
+ */
+interface MultiAgentSpinnerProps {
+  agents: AgentStatus[]
+  title?: string
+}
+
+export function MultiAgentSpinner({ 
+  agents, 
+  title = 'Multi-Agent Analysis' 
+}: MultiAgentSpinnerProps): React.ReactNode {
+  const theme = getTheme()
+  const [patternFrame, setPatternFrame] = useState(0)
+  const [elapsedTime, setElapsedTime] = useState(0)
+  const startTime = useRef(Date.now())
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPatternFrame(pf => (pf + 1) % SPINNER_PATTERNS.default.frames.length)
+    }, 200)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedTime(Math.floor((Date.now() - startTime.current) / 1000))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const completedAgents = agents.filter(a => a.status === 'complete').length
+  const totalProgress = agents.length > 0 
+    ? Math.round(agents.reduce((sum, a) => sum + a.progress, 0) / agents.length)
+    : 0
+
+  const currentColor = CYNE_GRADIENT_COLORS[patternFrame % CYNE_GRADIENT_COLORS.length]
+
+  return (
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor={currentColor}
+      paddingX={2}
+      paddingY={1}
+      marginY={1}
+    >
+      {/* Header */}
+      <Box flexDirection="row" justifyContent="space-between">
+        <Box flexDirection="row" gap={1}>
+          <Text color={currentColor} bold>
+            {SPINNER_PATTERNS.default.frames[patternFrame % SPINNER_PATTERNS.default.frames.length]}
+          </Text>
+          <Text color={currentColor} bold>
+            {title}
+          </Text>
+        </Box>
+        <Text color={theme.secondaryText}>
+          {completedAgents}/{agents.length} · {totalProgress}%
+        </Text>
+      </Box>
+
+      {/* Agent Progress Bars */}
+      <Box flexDirection="column" marginTop={1}>
+        {agents.map(agent => (
+          <AgentProgressBar
+            key={agent.id}
+            id={agent.id}
+            agentId={agent.id}
+            progress={agent.progress}
+            status={agent.status}
+          />
+        ))}
+      </Box>
+
+      {/* Footer */}
+      <Box 
+        flexDirection="row" 
+        justifyContent="space-between" 
+        marginTop={1}
+        borderStyle="single"
+        borderTop
+        borderBottom={false}
+        borderLeft={false}
+        borderRight={false}
+        paddingTop={1}
+      >
+        <Text color={theme.secondaryText}>
+          ⏱ {elapsedTime}s
+        </Text>
+        <Text color={theme.secondaryText}>
+          <Text color={theme.cynerza} bold>esc</Text> to interrupt
+        </Text>
+      </Box>
     </Box>
   )
 }
+

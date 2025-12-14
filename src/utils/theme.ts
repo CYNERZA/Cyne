@@ -240,11 +240,158 @@ const darkDaltonizedTheme: Theme = {
   },
 }
 
+// Dracula Theme - Popular dark theme with purple accents
+const draculaTheme: Theme = {
+  bashBorder: '#8be9fd',
+  cynerza: '#50fa7b',
+  permission: '#ffb86c',
+  secondaryBorder: '#6272a4',
+  text: '#f8f8f2',
+  secondaryText: '#6272a4',
+  suggestion: '#ff79c6',
+  success: '#50fa7b',
+  error: '#ff5555',
+  warning: '#f1fa8c',
+  diff: {
+    added: '#50fa7b44',
+    removed: '#ff555544',
+    addedDimmed: '#50fa7b22',
+    removedDimmed: '#ff555522',
+  },
+  accent: {
+    primary: '#bd93f9',
+    secondary: '#ff79c6',
+    tertiary: '#8be9fd',
+    glow: '#bd93f988',
+  },
+  interactive: {
+    hover: '#bd93f933',
+    active: '#bd93f966',
+    selected: '#bd93f9',
+  },
+  status: {
+    running: '#8be9fd',
+    pending: '#f1fa8c',
+    completed: '#50fa7b',
+  },
+  gradients: {
+    primary: ['#bd93f9', '#ff79c6', '#8be9fd'],
+    border: ['#bd93f9', '#50fa7b'],
+    success: ['#50fa7b', '#8be9fd'],
+    error: ['#ff5555', '#ff79c6'],
+    info: ['#8be9fd', '#bd93f9'],
+  },
+  animations: {
+    slow: 800,
+    medium: 400,
+    fast: 150,
+  },
+}
+
+// Monokai Theme - Classic vibrant coding theme
+const monokaiTheme: Theme = {
+  bashBorder: '#66d9ef',
+  cynerza: '#a6e22e',
+  permission: '#fd971f',
+  secondaryBorder: '#75715e',
+  text: '#f8f8f2',
+  secondaryText: '#75715e',
+  suggestion: '#ae81ff',
+  success: '#a6e22e',
+  error: '#f92672',
+  warning: '#e6db74',
+  diff: {
+    added: '#a6e22e44',
+    removed: '#f9267244',
+    addedDimmed: '#a6e22e22',
+    removedDimmed: '#f9267222',
+  },
+  accent: {
+    primary: '#66d9ef',
+    secondary: '#f92672',
+    tertiary: '#ae81ff',
+    glow: '#66d9ef88',
+  },
+  interactive: {
+    hover: '#66d9ef33',
+    active: '#66d9ef66',
+    selected: '#66d9ef',
+  },
+  status: {
+    running: '#66d9ef',
+    pending: '#e6db74',
+    completed: '#a6e22e',
+  },
+  gradients: {
+    primary: ['#66d9ef', '#ae81ff', '#f92672'],
+    border: ['#66d9ef', '#a6e22e'],
+    success: ['#a6e22e', '#66d9ef'],
+    error: ['#f92672', '#fd971f'],
+    info: ['#66d9ef', '#ae81ff'],
+  },
+  animations: {
+    slow: 800,
+    medium: 400,
+    fast: 150,
+  },
+}
+
+// Red Theme - Crimson/scarlet color palette
+const redTheme: Theme = {
+  bashBorder: '#ff6b6b',
+  cynerza: '#ff4757',
+  permission: '#ff7f50',
+  secondaryBorder: '#c44569',
+  text: '#f8f8f2',
+  secondaryText: '#cf6679',
+  suggestion: '#ff79c6',
+  success: '#50fa7b',
+  error: '#ff5555',
+  warning: '#ffa502',
+  diff: {
+    added: '#50fa7b44',
+    removed: '#ff555544',
+    addedDimmed: '#50fa7b22',
+    removedDimmed: '#ff555522',
+  },
+  accent: {
+    primary: '#ff4757',
+    secondary: '#ff6b6b',
+    tertiary: '#c44569',
+    glow: '#ff475788',
+  },
+  interactive: {
+    hover: '#ff475733',
+    active: '#ff475766',
+    selected: '#ff4757',
+  },
+  status: {
+    running: '#ff6b6b',
+    pending: '#ffa502',
+    completed: '#50fa7b',
+  },
+  gradients: {
+    primary: ['#ff4757', '#ff6b6b', '#c44569'],
+    border: ['#ff4757', '#ff7f50'],
+    success: ['#50fa7b', '#2ed573'],
+    error: ['#ff4757', '#ff6b6b'],
+    info: ['#ff6b6b', '#c44569'],
+  },
+  animations: {
+    slow: 800,
+    medium: 400,
+    fast: 150,
+  },
+}
+
 export type ThemeNames =
   | 'dark'
   | 'light'
   | 'light-daltonized'
   | 'dark-daltonized'
+  | 'dracula'
+  | 'monokai'
+  | 'red'
 
 export function getTheme(overrideTheme?: ThemeNames): Theme {
   const config = getGlobalConfig()
@@ -255,6 +402,12 @@ export function getTheme(overrideTheme?: ThemeNames): Theme {
       return lightDaltonizedTheme
     case 'dark-daltonized':
       return darkDaltonizedTheme
+    case 'dracula':
+      return draculaTheme
+    case 'monokai':
+      return monokaiTheme
+    case 'red':
+      return redTheme
     default:
       return darkTheme
   }

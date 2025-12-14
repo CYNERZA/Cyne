@@ -10,6 +10,7 @@ import { BashTool } from '../tools/BashTool/BashTool'
 import { getSlowAndCapableModel } from '../utils/model'
 import { MACRO } from './macros'
 import { isThinkModeEnabled } from '../commands/think'
+
 export function getCLISyspromptPrefix(): string {
   return `You are ${PRODUCT_NAME}, Cynerza official CLI for CLI.`
 }
@@ -74,6 +75,19 @@ You have access to a powerful set of tools. Use them proactively when they can h
 - **VSCodeSymbol**: Go to definition, find references, rename
 - **VSCodeListFiles**: Get open tabs/workspace files
 - **VSCodeSearch**: Search across workspace
+
+## Multi-Agent Analysis
+- **MultiPrompt**: Orchestrate multi-agent analysis with specialized agents:
+  - **Security Agent**: OWASP scanning, vulnerability detection, secrets analysis
+  - **Performance Agent**: Bottleneck detection, algorithm complexity, optimization
+  - **Architect Agent**: Design patterns, SOLID principles, coupling analysis
+  - **Analyst Agent**: Code review, code smells, technical debt
+  - **Documentation Agent**: Docs analysis, README generation, API docs
+
+  Use MultiPrompt when the user asks for:
+  - Comprehensive code analysis ("analyze this codebase")
+  - Multiple perspectives ("check for security AND performance issues")
+  - Deep code review requests
 
 ## Smart Notifications (works in both CLI and VS Code)
 
@@ -443,7 +457,29 @@ You MUST answer concisely with fewer than 4 lines of text (not including tool us
     `IMPORTANT: Assist with defensive security tasks only. Refuse to create, modify, or improve code that may be used maliciously. Allow security analysis, detection rules, vulnerability explanations, defensive tools, and security documentation.
     IMPORTANT: Always use the TodoWrite tool to plan and track tasks throughout the conversation.`,
   ]
-}export async function getEnvInfo(): Promise<string> {
+}
+
+/**
+ * Load project-specific context from CYNE.md and skill files
+ */
+export async function getProjectContext(): Promise<string> {
+  const { loadCyneContext, formatContextForPrompt } = await import('../utils/cyneContext')
+  
+  try {
+    const context = await loadCyneContext()
+    
+    if (!context || context.loadedFiles.length === 0) {
+      return ''
+    }
+    
+    const formatted = formatContextForPrompt(context)
+    return formatted ? `\n${formatted}\n` : ''
+  } catch {
+    return ''
+  }
+}
+
+export async function getEnvInfo(): Promise<string> {
   const [model, isGit] = await Promise.all([
     getSlowAndCapableModel(),
     getIsGit(),
