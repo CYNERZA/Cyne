@@ -6,8 +6,8 @@ import { makeVSCodeRequest, VSCodeNotConnectedError, ensureVSCodeAvailable } fro
 
 export const inputSchema = z.strictObject({
   filename: z.string().describe('Name/path of the file to edit (e.g., "test.py" or "folder/test.py")'),
-  old_text: z.string().describe('Text to replace (must match exactly)'),
-  new_text: z.string().describe('New text to replace with')
+  old_text: z.string().optional().default('').describe('Text to replace (must match exactly)'),
+  new_text: z.string().optional().default('').describe('New text to replace with')
 })
 
 type In = z.infer<typeof inputSchema>

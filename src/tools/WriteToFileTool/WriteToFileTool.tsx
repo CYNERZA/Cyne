@@ -10,10 +10,10 @@ import { normalizeFilePath } from '../../utils/file'
 import { hasWritePermission } from '../../utils/permissions/filesystem'
 
 const inputSchema = z.strictObject({
-  TargetFile: z.string().describe('The target file to create and write code to.'),
+  TargetFile: z.string().describe('The target file to create and write code to. MUST be specified as the FIRST argument.'),
   Overwrite: z.boolean().default(false).describe('Set this to true to overwrite an existing file. WARNING: This will replace the entire file contents. Only use when you explicitly intend to overwrite.'),
-  CodeContent: z.string().optional().describe('The code contents to write to the file.'),
-  EmptyFile: z.boolean().default(false).describe('Set this to true to create an empty file.'),
+  CodeContent: z.string().optional().default('').describe('The complete code contents to write to the file. Required unless EmptyFile is true.'),
+  EmptyFile: z.boolean().default(false).describe('Set this to true ONLY to create an empty file. If false (default), CodeContent MUST be provided.'),
   Description: z.string().optional().describe('Brief, user-facing explanation of what this change did.'),
   Complexity: z.number().optional().describe('A 1-10 rating of how important it is for the user to review this change.'),
   IsArtifact: z.boolean().optional().describe('Set this to true when creating an artifact file.'),

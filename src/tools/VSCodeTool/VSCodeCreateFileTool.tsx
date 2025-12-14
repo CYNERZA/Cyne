@@ -6,7 +6,7 @@ import { makeVSCodeRequest, VSCodeNotConnectedError, ensureVSCodeAvailable } fro
 
 export const inputSchema = z.strictObject({
   filename: z.string().describe('Name/path of the file to create (e.g., "test.py" or "folder/test.py")'),
-  content: z.string().describe('Content to write to the file')
+  content: z.string().optional().default('').describe('Content to write to the file (optional, defaults to empty)')
 })
 
 type In = z.infer<typeof inputSchema>
@@ -48,10 +48,6 @@ export const VSCodeCreateFileTool = {
       return { result: false, message: 'filename cannot contain ".."' }
     }
     
-    if (!input.content && input.content !== '') {
-      return { result: false, message: 'content is required (can be empty string)' }
-    }
-    
     return { result: true, message: '' }
   },
   
@@ -60,7 +56,7 @@ export const VSCodeCreateFileTool = {
 
 Parameters:
 - filename: Name or path of the file to create (required)
-- content: Content to write to the file (required, can be empty)
+- content: Content to write to the file (optional, defaults to empty)
 
 The file will be created in the current workspace and opened in VS Code.
 

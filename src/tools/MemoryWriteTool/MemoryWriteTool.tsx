@@ -10,8 +10,10 @@ import { DESCRIPTION, PROMPT } from './prompt'
 
 const inputSchema = z.strictObject({
   file_path: z.string().describe('Path to the memory file to write'),
-  content: z.string().describe('Content to write to the file'),
+  content: z.string().optional().default('').describe('Content to write to the file'),
 })
+
+type In = z.infer<typeof inputSchema>
 
 export const MemoryWriteTool = {
   name: 'MemoryWrite',
@@ -56,17 +58,17 @@ export const MemoryWriteTool = {
       </Box>
     )
   },
-  async validateInput({ file_path }) {
-    const fullPath = join(MEMORY_DIR, file_path)
+  async validateInput(input) {
+    const fullPath = join(MEMORY_DIR, input.file_path)
     if (!fullPath.startsWith(MEMORY_DIR)) {
       return { result: false, message: 'Invalid memory file path' }
     }
-    return { result: true }
+    return { result: true, message: '' }
   },
-  async *call({ file_path, content }) {
-    const fullPath = join(MEMORY_DIR, file_path)
+  async *call(input) {
+    const fullPath = join(MEMORY_DIR, input.file_path)
     mkdirSync(dirname(fullPath), { recursive: true })
-    writeFileSync(fullPath, content, 'utf-8')
+    writeFileSync(fullPath, input.content || '', 'utf-8')
     yield {
       type: 'result',
       data: 'Saved',
@@ -74,4 +76,4 @@ export const MemoryWriteTool = {
     }
     return 'Saved'
   },
-} satisfies Tool<typeof inputSchema, string>
+} satisfies Tool<In, string>
