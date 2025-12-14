@@ -12,11 +12,11 @@ import { hasWritePermission } from '../../utils/permissions/filesystem'
 const inputSchema = z.strictObject({
   TargetFile: z.string().describe('The target file to create and write code to.'),
   Overwrite: z.boolean().default(false).describe('Set this to true to overwrite an existing file. WARNING: This will replace the entire file contents. Only use when you explicitly intend to overwrite.'),
-  CodeContent: z.string().describe('The code contents to write to the file.'),
+  CodeContent: z.string().optional().describe('The code contents to write to the file.'),
   EmptyFile: z.boolean().default(false).describe('Set this to true to create an empty file.'),
-  Description: z.string().describe('Brief, user-facing explanation of what this change did.'),
-  Complexity: z.number().describe('A 1-10 rating of how important it is for the user to review this change.'),
-  IsArtifact: z.boolean().describe('Set this to true when creating an artifact file.'),
+  Description: z.string().optional().describe('Brief, user-facing explanation of what this change did.'),
+  Complexity: z.number().optional().describe('A 1-10 rating of how important it is for the user to review this change.'),
+  IsArtifact: z.boolean().optional().describe('Set this to true when creating an artifact file.'),
 })
 
 export const WriteToFileTool = {
@@ -102,7 +102,7 @@ Use this tool to create new files with code content.
       mkdirSync(dir, { recursive: true })
     }
 
-    const content = EmptyFile ? '' : CodeContent
+    const content = EmptyFile ? '' : (CodeContent || '')
     writeFileSync(fullPath, content, 'utf-8')
 
     const data = {
