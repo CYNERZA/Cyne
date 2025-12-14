@@ -5,6 +5,7 @@ import { Box, Text } from 'ink'
 import { Select } from '@inkjs/ui'
 import { getGlobalConfig, saveGlobalConfig } from '../utils/config'
 import { ThemeNames, getTheme } from '../utils/theme'
+import { getIcons } from '../utils/fonts'
 
 /**
  * Theme Selector Command - /theme
@@ -12,13 +13,13 @@ import { ThemeNames, getTheme } from '../utils/theme'
  */
 
 const AVAILABLE_THEMES: { label: string; value: ThemeNames }[] = [
-  { label: '🌙 Dark (Default)', value: 'dark' },
-  { label: '☀️ Light', value: 'light' },
-  { label: '🧛 Dracula (Purple)', value: 'dracula' },
-  { label: '🎨 Monokai (Vibrant)', value: 'monokai' },
-  { label: '🔴 Red (Crimson)', value: 'red' },
-  { label: '🌙 Dark (Colorblind)', value: 'dark-daltonized' },
-  { label: '☀️ Light (Colorblind)', value: 'light-daltonized' },
+  { label: 'Dark (Default)', value: 'dark' },
+  { label: 'Light', value: 'light' },
+  { label: 'Dracula (Purple)', value: 'dracula' },
+  { label: 'Monokai (Vibrant)', value: 'monokai' },
+  { label: 'Red (Crimson)', value: 'red' },
+  { label: 'Dark (Colorblind)', value: 'dark-daltonized' },
+  { label: 'Light (Colorblind)', value: 'light-daltonized' },
 ]
 
 interface ThemeSelectorProps {
@@ -29,12 +30,13 @@ function ThemeSelector({ onDone }: ThemeSelectorProps): React.ReactNode {
   const config = getGlobalConfig()
   const currentTheme = config.theme || 'dark'
   const [selected, setSelected] = useState(false)
+  const icons = getIcons()
 
   const handleSelect = (value: string) => {
     const themeName = value as ThemeNames
 
     if (themeName === currentTheme) {
-      onDone(`✓ Already using "${themeName}" theme`)
+      onDone(`${icons.check} Already using "${themeName}" theme`)
       return
     }
 
@@ -45,7 +47,7 @@ function ThemeSelector({ onDone }: ThemeSelectorProps): React.ReactNode {
     })
 
     setSelected(true)
-    onDone(`✓ Theme changed to "${themeName}"\n\nRestart Cyne to apply the theme.`)
+    onDone(`${icons.check} Theme changed to "${themeName}"\n\nRestart Cyne to apply the theme.`)
   }
 
   if (selected) {
@@ -55,14 +57,14 @@ function ThemeSelector({ onDone }: ThemeSelectorProps): React.ReactNode {
   return (
     <Box flexDirection="column" paddingX={1} paddingY={1}>
       <Box marginBottom={1}>
-        <Text bold color="#9ACD32">🎨 Theme Selector</Text>
+        <Text bold color="#9ACD32">{icons.palette} Theme Selector</Text>
       </Box>
       <Box marginBottom={1}>
         <Text dimColor>Current: </Text>
         <Text bold color="#9ACD32">{currentTheme}</Text>
       </Box>
       <Box marginBottom={1}>
-        <Text dimColor>Use ↑↓ arrows to navigate, Enter to select</Text>
+        <Text dimColor>Use {icons.arrowDown} arrows to navigate, Enter to select</Text>
       </Box>
       <Select
         options={AVAILABLE_THEMES}
@@ -102,3 +104,4 @@ class ThemeCommandHandler {
 }
 
 export default ThemeCommandHandler.createCommand()
+

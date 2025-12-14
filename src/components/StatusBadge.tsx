@@ -2,6 +2,7 @@ import { Box, Text } from 'ink'
 import React from 'react'
 import { getTheme } from '../utils/theme'
 import { usePulse } from '../utils/animations'
+import { getIcons } from '../utils/fonts'
 
 export type BadgeStatus = 'success' | 'error' | 'warning' | 'info' | 'running' | 'pending' | 'completed'
 
@@ -20,6 +21,7 @@ export function StatusBadge({
   animate = true,
 }: StatusBadgeProps): React.ReactElement {
   const theme = getTheme()
+  const icons = getIcons()
   const pulseOpacity = usePulse(0.7, 1.0, theme.animations.medium)
   
   // Determine icon and color based on status
@@ -27,13 +29,13 @@ export function StatusBadge({
     switch (status) {
       case 'success':
       case 'completed':
-        return { icon: '✓', color: theme.success, label: text || 'Success' }
+        return { icon: icons.success, color: theme.success, label: text || 'Success' }
       case 'error':
-        return { icon: '✗', color: theme.error, label: text || 'Error' }
+        return { icon: icons.error, color: theme.error, label: text || 'Error' }
       case 'warning':
-        return { icon: '⚠', color: theme.warning, label: text || 'Warning' }
+        return { icon: icons.warning, color: theme.warning, label: text || 'Warning' }
       case 'info':
-        return { icon: 'ℹ', color: theme.accent.primary, label: text || 'Info' }
+        return { icon: icons.info, color: theme.accent.primary, label: text || 'Info' }
       case 'running':
         return { icon: '●', color: theme.status.running, label: text || 'Running' }
       case 'pending':

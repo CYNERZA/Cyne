@@ -10,6 +10,7 @@ import * as React from 'react'
 import { useState, useEffect, useRef } from 'react'
 import { getTheme } from '../utils/theme'
 import { AgentTask, OrchestrationEvent } from '../types/agents'
+import { getIcons } from '../utils/fonts'
 
 // ============================================================================
 // Types
@@ -85,12 +86,13 @@ function ProgressBar({ progress, width = 20, color, showPercentage = true }: Pro
 function AgentCard({ task, compact = false }: AgentCardProps): React.ReactNode {
   const theme = getTheme()
   const config = getAgentConfig(task.agentId)
+  const icons = getIcons()
 
   const getStatusIcon = () => {
     switch (task.status) {
       case 'running': return '●'
-      case 'complete': return '✓'
-      case 'error': return '✗'
+      case 'complete': return icons.success
+      case 'error': return icons.error
       case 'pending': return '○'
       case 'queued': return '◐'
       default: return '·'

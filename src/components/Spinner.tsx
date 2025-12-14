@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getTheme } from '../utils/theme'
 import { sample } from 'lodash-es'
 import { getSessionState } from '../utils/sessionState'
+import { getIcons } from '../utils/fonts'
 
 /**
  * Enhanced Spinner with Multi-Agent Visualization Support
@@ -138,14 +139,15 @@ function AgentProgressBar({
   status 
 }: AgentStatus): React.ReactNode {
   const theme = getTheme()
+  const icons = getIcons()
   const config = AGENT_ICONS[agentId] || AGENT_ICONS.default
   
   const width = 10
   const filled = Math.round((progress / 100) * width)
   const empty = width - filled
   
-  const statusIcon = status === 'complete' ? '✓' :
-                     status === 'error' ? '✗' :
+  const statusIcon = status === 'complete' ? icons.success :
+                     status === 'error' ? icons.error :
                      status === 'running' ? '●' : '○'
   
   const statusColor = status === 'complete' ? '#6bcb77' :
