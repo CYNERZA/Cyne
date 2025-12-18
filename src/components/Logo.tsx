@@ -95,23 +95,23 @@ export function Logo({
   const username = getUsername()
   const greeting = getGreeting()
   const cwd = getCwd()
-  
+
   // Get git info
   const gitBranch = getGitBranch()
   const gitStatus = getGitStatus()
-  
+
   // Get recent history
   const recentHistory = getHistory().slice(0, 3)
-  
+
   // Get streaming tokens from session state
   const streamingTokens = getSessionState('streamingTokens') || 0
-  
+
   const hasOverrides = Boolean(
     isCustomApiKey ||
-      process.env.DISABLE_PROMPT_CACHING ||
-      process.env.API_TIMEOUT_MS ||
-      process.env.MAX_THINKING_TOKENS ||
-      process.env.OPENAI_BASE_URL,
+    process.env.DISABLE_PROMPT_CACHING ||
+    process.env.API_TIMEOUT_MS ||
+    process.env.MAX_THINKING_TOKENS ||
+    process.env.OPENAI_BASE_URL,
   )
 
   return (
@@ -137,8 +137,8 @@ export function Logo({
       {/* Main Two-Column Layout */}
       <Box flexDirection="row">
         {/* Left Panel - Greeting, Mascot, Info */}
-        <Box 
-          flexDirection="column" 
+        <Box
+          flexDirection="column"
           width={42}
           paddingRight={2}
         >
@@ -162,17 +162,42 @@ export function Logo({
               <Text color={theme.accent.secondary} bold>
                 {currentModel.split('-').slice(0, 2).join(' ').replace(/^\w/, c => c.toUpperCase())}
               </Text>
-              <Text color={theme.secondaryText}> · Anthropic</Text>
+              <Text color={theme.secondaryText}> · {config.primaryProvider || 'Anthropic'}</Text>
             </Box>
             <Box>
               <Text color={theme.secondaryText}>{cwd}</Text>
             </Box>
+
+            {/* Model Roles Section */}
+            {config.hasMultiModelEnabled && config.modelRoles && (
+              <Box flexDirection="column" marginTop={1}>
+                <Text color={theme.cynerza} bold>Model Roles</Text>
+                {config.modelRoles.frontend && (
+                  <Box>
+                    <Text color={theme.info}>🎨 Frontend: </Text>
+                    <Text color={theme.text}>{config.modelRoles.frontend.model}</Text>
+                  </Box>
+                )}
+                {config.modelRoles.backend && (
+                  <Box>
+                    <Text color={theme.success}>⚙️  Backend: </Text>
+                    <Text color={theme.text}>{config.modelRoles.backend.model}</Text>
+                  </Box>
+                )}
+                {config.modelRoles.general && (
+                  <Box>
+                    <Text color={theme.warning}>⚡ General: </Text>
+                    <Text color={theme.text}>{config.modelRoles.general.model}</Text>
+                  </Box>
+                )}
+              </Box>
+            )}
           </Box>
         </Box>
 
         {/* Right Panel - Tips & Activity */}
-        <Box 
-          flexDirection="column" 
+        <Box
+          flexDirection="column"
           borderStyle="single"
           borderColor={theme.secondaryText}
           borderLeft

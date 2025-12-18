@@ -10,6 +10,7 @@ import help from './commands/help'
 import init from './commands/init'
 import listen from './commands/listen'
 import login from './commands/login'
+import modelRoles from './commands/modelRoles'
 import mcp from './commands/mcp'
 import * as model from './commands/model'
 import onboarding from './commands/onboarding'
@@ -95,6 +96,7 @@ const COMMANDS = memoize((): Command[] => [
   login,
   mcp,
   model,
+  modelRoles,
   onboarding,
   pr_comments,
   releaseNotes,

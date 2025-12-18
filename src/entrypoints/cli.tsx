@@ -292,7 +292,7 @@ async function cynerMain() {
   // Check authentication - required for all operations except login/logout
   const isLoginCommand = process.argv.includes('--login')
   const isLogoutCommand = process.argv.includes('--logout')
-  
+
   if (!isLoginCommand && !isLogoutCommand && !AuthService.isAuthenticated()) {
     // Directly render login page instead of showing error
     await clearTerminal()
@@ -311,11 +311,13 @@ async function cynerMain() {
   // Initialize telemetry if authenticated
   if (AuthService.isAuthenticated()) {
     await TelemetryClient.init()
-    
+
     // Always sync config from backend when authenticated
     try {
-      const { syncConfigFromBackend } = await import('../utils/config')
+      const { syncConfigFromBackend, syncMultiModelConfig } = await import('../utils/config')
       await syncConfigFromBackend()
+      // Also sync multi-model role assignments
+      await syncMultiModelConfig()
     } catch (error) {
       // Sync errors are handled gracefully in syncConfigFromBackend
       // No need to log here as errors are already logged there
@@ -444,11 +446,11 @@ ${commandList}`,
           await clearTerminal()
           await new Promise<void>(resolve => {
             render(
-              <ModelSelector 
+              <ModelSelector
                 onDone={() => {
                   console.log('✓ Configuration saved')
                   process.exit(0)
-                }} 
+                }}
               />,
               {
                 exitOnCtrlC: true,
@@ -475,12 +477,12 @@ ${commandList}`,
         }
 
         await cynerShowSetupScreens(dangerouslySkipPermissions, print)
-        
+
         // Set THINK_TOOL environment variable if --think flag is used
         if (think) {
           process.env.THINK_TOOL = 'true'
         }
-        
+
         logEvent('cyner_init', {
           entrypoint: PRODUCT_COMMAND,
           hasInitialPrompt: Boolean(prompt).toString(),
@@ -530,10 +532,10 @@ ${commandList}`,
           await new Promise<void>(async (resolve) => {
             const { StartupSequence } = await import('../components/StartupSequence')
             render(
-              <StartupSequence 
+              <StartupSequence
                 onComplete={() => {
                   resolve()
-                }} 
+                }}
                 skipAnimation={false}
               />,
               {
@@ -545,7 +547,7 @@ ${commandList}`,
 
           // Clear terminal and then show REPL
           await clearTerminal()
-          
+
           render(
             <REPL
               commands={commands}

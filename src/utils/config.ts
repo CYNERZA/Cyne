@@ -107,6 +107,16 @@ export type ProviderType =
   | 'litellm'
   | 'custom'
 
+// Multi-model role assignments
+export type ModelRole = 'frontend' | 'backend' | 'documentation' | 'general'
+
+export type RoleModelConfig = {
+  provider: ProviderType
+  model: string
+  apiKey?: string
+  baseURL?: string
+}
+
 export type GlobalConfig = {
   projects?: Record<string, ProjectConfig>
   numStartups: number
@@ -151,6 +161,9 @@ export type GlobalConfig = {
   // Backend integration
   useBackendModels?: boolean // Whether to fetch models from backend
   backendProviderId?: string // Currently selected backend provider ID
+  // Multi-model role assignments
+  modelRoles?: Partial<Record<ModelRole, RoleModelConfig>>
+  hasMultiModelEnabled?: boolean
 }
 
 export const DEFAULT_GLOBAL_CONFIG: GlobalConfig = {
@@ -677,7 +690,7 @@ export function getActiveApiKey(
       return memoryKey
     }
   }
-  
+
   // Priority 2: Fall back to local config arrays (for non-backend usage)
   let keyArray =
     type === 'small' ? config.smallModelApiKeys : config.largeModelApiKeys
@@ -711,20 +724,30 @@ export function getActiveApiKey(
 export async function syncConfigFromBackend(): Promise<void> {
   const { BackendClient } = await import('../services/backend')
   const { AuthService } = await import('../services/auth')
-  
+
   // Check if user is authenticated before making any API calls
   if (!AuthService.isAuthenticated()) {
     // Silently return - user will be prompted to login by the CLI
     return
   }
-  
+
   try {
     const fullConfig = await BackendClient.getFullConfig()
-    
+
     if (!fullConfig || !fullConfig.provider) {
       return
     }
-    
+
+    // Debug: Log what we received from backend
+    if (process.env.DEBUG || getGlobalConfig().verbose) {
+      console.log('[syncConfigFromBackend] Received config:', {
+        provider: fullConfig.provider,
+        model: fullConfig.model,
+        base_url: fullConfig.base_url,
+        has_api_key: !!fullConfig.api_key,
+      })
+    }
+
     // Store credentials in MEMORY ONLY - never save to disk
     setMemoryCredentials({
       apiKey: fullConfig.api_key,
@@ -732,9 +755,9 @@ export async function syncConfigFromBackend(): Promise<void> {
       provider: fullConfig.provider,
       model: fullConfig.model,
     })
-    
+
     const config = getGlobalConfig()
-    
+
     // Map provider names to our ProviderType
     const providerMap: Record<string, ProviderType> = {
       'openai': 'openai',
@@ -748,7 +771,7 @@ export async function syncConfigFromBackend(): Promise<void> {
       'azure': 'azure',
       'litellm': 'litellm',
     }
-    
+
     // Save ONLY non-sensitive metadata to disk
     // CRITICAL: Do NOT save api_key or base_url to config.json!
     saveGlobalConfig({
@@ -757,8 +780,8 @@ export async function syncConfigFromBackend(): Promise<void> {
       largeModelName: fullConfig.model,
       smallModelName: fullConfig.model,
       primaryProvider: providerMap[fullConfig.provider] || 'openai',
-      backendProviderId: fullConfig.source === 'user' 
-        ? fullConfig.provider 
+      backendProviderId: fullConfig.source === 'user'
+        ? fullConfig.provider
         : `default_${fullConfig.provider}`,
     })
   } catch (error: any) {
@@ -772,7 +795,7 @@ export async function syncConfigFromBackend(): Promise<void> {
       // Don't throw - this will be handled by the login prompt in main CLI
       return
     }
-    
+
     // For other errors, fail gracefully - don't block if backend is down or has issues
     // The error is logged but we don't prevent the CLI from starting
     logError(error)
@@ -791,5 +814,101 @@ export function markApiKeyAsFailed(key: string, type: 'small' | 'large'): void {
       ...getSessionState('currentApiKeyIndex'),
       [type]: getSessionState('currentApiKeyIndex')[type] - 1,
     })
+  }
+}
+
+// Sync multi-model configuration from backend
+export async function syncMultiModelConfig(): Promise<void> {
+  const { BackendClient } = await import('../services/backend')
+  const { AuthService } = await import('../services/auth')
+  const { getModelSelector } = await import('../services/ModelSelector')
+
+  // Check if user is authenticated
+  if (!AuthService.isAuthenticated()) {
+    return
+  }
+
+  try {
+    const multiConfig = await BackendClient.getMultiModelConfig()
+
+    if (!multiConfig) {
+      return
+    }
+
+    const selector = getModelSelector()
+
+    // Map provider names to our ProviderType
+    const mapProvider = (provider: string): ProviderType => {
+      const providerMap: Record<string, ProviderType> = {
+        'openai': 'openai',
+        'anthropic': 'anthropic',
+        'mistral': 'mistral',
+        'deepseek': 'deepseek',
+        'xai': 'xai',
+        'groq': 'groq',
+        'gemini': 'gemini',
+        'ollama': 'ollama',
+        'azure': 'azure',
+        'litellm': 'litellm',
+        'google': 'gemini',
+      }
+      return providerMap[provider] || 'openai'
+    }
+
+    // Build role assignments for ModelSelector
+    const roleAssignments: Record<string, RoleModelConfig> = {}
+
+    if (multiConfig.general) {
+      roleAssignments.general = {
+        provider: mapProvider(multiConfig.general.provider),
+        model: multiConfig.general.model,
+        apiKey: multiConfig.general.api_key,
+        baseURL: multiConfig.general.base_url,
+      }
+    }
+
+    if (multiConfig.frontend) {
+      roleAssignments.frontend = {
+        provider: mapProvider(multiConfig.frontend.provider),
+        model: multiConfig.frontend.model,
+        apiKey: multiConfig.frontend.api_key,
+        baseURL: multiConfig.frontend.base_url,
+      }
+    }
+
+    if (multiConfig.backend) {
+      roleAssignments.backend = {
+        provider: mapProvider(multiConfig.backend.provider),
+        model: multiConfig.backend.model,
+        apiKey: multiConfig.backend.api_key,
+        baseURL: multiConfig.backend.base_url,
+      }
+    }
+
+    if (multiConfig.documentation) {
+      roleAssignments.documentation = {
+        provider: mapProvider(multiConfig.documentation.provider),
+        model: multiConfig.documentation.model,
+        apiKey: multiConfig.documentation.api_key,
+        baseURL: multiConfig.documentation.base_url,
+      }
+    }
+
+    // Set role assignments in ModelSelector
+    if (roleAssignments.general) {
+      selector.setRoleAssignments(roleAssignments as any)
+    }
+
+    // Update global config with multi-model flag and roles (for UI display)
+    const config = getGlobalConfig()
+    saveGlobalConfig({
+      ...config,
+      hasMultiModelEnabled: multiConfig.has_role_assignments,
+      modelRoles: roleAssignments as Partial<Record<ModelRole, RoleModelConfig>>,
+    })
+
+  } catch (error: any) {
+    // Fail gracefully - multi-model is optional
+    logError(error)
   }
 }

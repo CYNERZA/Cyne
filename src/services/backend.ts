@@ -66,6 +66,22 @@ interface UsageIncrement {
   monthly_count: number
 }
 
+// Multi-model configuration for role-based model selection
+interface RoleConfig {
+  provider: string
+  model: string
+  api_key: string
+  base_url?: string
+}
+
+export interface MultiModelConfig {
+  has_role_assignments: boolean
+  frontend?: RoleConfig
+  backend?: RoleConfig
+  documentation?: RoleConfig
+  general: RoleConfig
+}
+
 /**
  * Backend API Client
  * Handles all communication with the backend server
@@ -121,6 +137,20 @@ export class BackendClient {
   }
 
   /**
+   * Get multi-model configuration for role-based model selection
+   * Returns per-role provider configs (frontend, backend, documentation, general)
+   */
+  static async getMultiModelConfig(): Promise<MultiModelConfig | null> {
+    try {
+      return await this.makeRequest<MultiModelConfig>('/api/config/multi')
+    } catch (error) {
+      // Multi-model is optional - fail gracefully
+      console.error('Failed to get multi-model config:', error)
+      return null
+    }
+  }
+
+  /**
    * Get user's personal providers
    */
   static async getProviders(): Promise<Provider[]> {
@@ -139,7 +169,7 @@ export class BackendClient {
     const body: Record<string, any> = { is_default: isDefault }
     if (model) body.model = model
     if (displayName) body.display_name = displayName
-    
+
     return this.makeRequest(`/api/providers/${providerId}`, {
       method: 'PUT',
       body: JSON.stringify(body),
