@@ -17,9 +17,9 @@ import {
   getGlobalConfig,
   getActiveApiKey,
 } from '../utils/config'
-import { 
-  getMemoryBaseURL, 
-  hasMemoryCredentials 
+import {
+  getMemoryBaseURL,
+  hasMemoryCredentials
 } from '../utils/memoryConfig'
 import { logError } from '../utils/log'
 import OpenAI from 'openai'
@@ -60,7 +60,7 @@ interface StreamResponse {
 /**
  * Streaming delta type for partial response updates
  */
-export type StreamingDelta = 
+export type StreamingDelta =
   | { type: 'text_delta'; text: string }
   | { type: 'tool_call_delta'; toolCallId: string; toolName: string; argumentsDelta: string }
   | { type: 'done'; message: AssistantMessage }
@@ -85,12 +85,12 @@ class AIClientManager {
 
   getClient(): OpenAI | Anthropic {
     const config = getGlobalConfig()
-    
+
     // Use Anthropic SDK for Anthropic models
     if (config.primaryProvider === 'anthropic') {
       return this.getAnthropicClient()
     }
-    
+
     // Use OpenAI SDK for everything else
     return this.getOpenAIClient()
   }
@@ -172,7 +172,7 @@ class AIClientManager {
   async validateConnection(): Promise<boolean> {
     try {
       const config = getGlobalConfig()
-      
+
       if (config.primaryProvider === 'anthropic') {
         // For Anthropic, just check that client can be created
         this.getAnthropicClient()
@@ -238,7 +238,7 @@ class MessageFormatService {
 
   static convertMessagesToOpenAI(messages: (UserMessage | AssistantMessage)[]): any[] {
     const openaiMessages: any[] = []
-    
+
     for (const msg of messages) {
       if (msg.type === 'assistant') {
         const assistantMsg = this.transformAssistantMessage(msg)
@@ -257,7 +257,7 @@ class MessageFormatService {
       role: 'assistant',
       content: null
     }
-    
+
     const content = msg.message.content
     if (typeof content === 'string') {
       assistantMsg.content = content
@@ -267,45 +267,58 @@ class MessageFormatService {
         .map(block => block.text)
         .join('\n')
         .trim()
-      
+
       const toolCalls = content
         .filter(block => block.type === 'tool_use')
-        .map(block => ({
-          id: block.id,
-          type: 'function',
-          function: {
-            name: block.name,
-            arguments: JSON.stringify(block.input)
+        .map(block => {
+          const toolCall: any = {
+            id: block.id,
+            type: 'function',
+            function: {
+              name: block.name,
+              arguments: JSON.stringify(block.input)
+            }
           }
-        }))
-      
+
+          // Preserve Gemini 3's thought_signature for multi-turn tool calling
+          if ((block as any).thought_signature) {
+            toolCall.extra_content = {
+              google: {
+                thought_signature: (block as any).thought_signature
+              }
+            }
+          }
+
+          return toolCall
+        })
+
       assistantMsg.content = textContent || null
       if (toolCalls.length > 0) {
         assistantMsg.tool_calls = toolCalls
       }
     }
-    
+
     return assistantMsg
   }
 
   private static transformUserMessage(msg: UserMessage): any[] {
     const content = msg.message.content
-    
+
     if (typeof content === 'string') {
       return [{
         role: 'user',
         content: content
       }]
     }
-    
+
     if (Array.isArray(content)) {
       const toolResults = content.filter(block => block.type === 'tool_result')
-      
+
       if (toolResults.length > 0) {
         return toolResults.map(toolResult => ({
           role: 'tool',
-          content: typeof toolResult.content === 'string' 
-            ? toolResult.content 
+          content: typeof toolResult.content === 'string'
+            ? toolResult.content
             : JSON.stringify(toolResult.content),
           tool_call_id: toolResult.tool_use_id
         }))
@@ -315,14 +328,14 @@ class MessageFormatService {
           .map(block => block.text)
           .join('\n')
           .trim()
-        
+
         return [{
           role: 'user',
           content: textContent || 'user message'
         }]
       }
     }
-    
+
     return []
   }
 }
@@ -361,7 +374,7 @@ class AIQueryService {
           TelemetryClient.trackEvent('quota_limit_reached', {
             message: quotaCheck.message,
           })
-          
+
           return {
             uuid: randomUUID(),
             type: 'assistant',
@@ -382,7 +395,7 @@ class AIQueryService {
 
       const config = getGlobalConfig()
       const model = options.model || config.largeModelName || 'gpt-4'
-      
+
       // Route to appropriate SDK based on provider
       if (config.primaryProvider === 'anthropic') {
         return await this.executeAnthropicQuery(messages, systemPrompt, tools, model)
@@ -434,12 +447,12 @@ class AIQueryService {
 
     } catch (error) {
       logError(error)
-      
+
       // Track error
       TelemetryClient.trackEvent('llm_error', {
         error: error instanceof Error ? error.message : 'Unknown error',
       })
-      
+
       return this.createErrorResponse(error)
     }
   }
@@ -467,7 +480,7 @@ class AIQueryService {
           TelemetryClient.trackEvent('quota_limit_reached', {
             message: quotaCheck.message,
           })
-          
+
           const errorMessage: AssistantMessage = {
             uuid: randomUUID(),
             type: 'assistant',
@@ -483,7 +496,7 @@ class AIQueryService {
             costUSD: 0,
             durationMs: 0,
           } as AssistantMessage
-          
+
           yield { type: 'done', message: errorMessage }
           return
         }
@@ -491,7 +504,7 @@ class AIQueryService {
 
       const config = getGlobalConfig()
       const model = options.model || config.largeModelName || 'gpt-4'
-      
+
       // For Anthropic, fall back to non-streaming for now
       if (config.primaryProvider === 'anthropic') {
         const result = await this.executeAnthropicQuery(messages, systemPrompt, tools, model)
@@ -535,14 +548,14 @@ class AIQueryService {
 
       // Accumulate content for final message
       let accumulatedContent = ''
-      const toolCalls: Map<number, { id: string; name: string; arguments: string }> = new Map()
+      const toolCalls: Map<number, { id: string; name: string; arguments: string; thoughtSignature?: string }> = new Map()
       const startTime = Date.now()
 
       // Process streaming chunks
       if (Symbol.asyncIterator in streamResult) {
         for await (const chunk of streamResult as AsyncIterable<any>) {
           if (signal.aborted) break
-          
+
           const delta = chunk.choices?.[0]?.delta
           if (!delta) continue
 
@@ -556,15 +569,16 @@ class AIQueryService {
           if (delta.tool_calls) {
             for (const toolCall of delta.tool_calls) {
               const index = toolCall.index ?? 0
-              
+
               if (!toolCalls.has(index)) {
                 toolCalls.set(index, {
                   id: toolCall.id || '',
                   name: toolCall.function?.name || '',
-                  arguments: ''
+                  arguments: '',
+                  thoughtSignature: undefined
                 })
               }
-              
+
               const existing = toolCalls.get(index)!
               if (toolCall.id) existing.id = toolCall.id
               if (toolCall.function?.name) existing.name = toolCall.function.name
@@ -576,6 +590,11 @@ class AIQueryService {
                   toolName: existing.name,
                   argumentsDelta: toolCall.function.arguments
                 }
+              }
+
+              // Extract Gemini 3's thought_signature from extra_content
+              if (toolCall.extra_content?.google?.thought_signature) {
+                existing.thoughtSignature = toolCall.extra_content.google.thought_signature
               }
             }
           }
@@ -589,7 +608,7 @@ class AIQueryService {
 
       // Build final message
       const content: any[] = []
-      
+
       if (accumulatedContent.trim()) {
         content.push({
           type: 'text',
@@ -603,15 +622,44 @@ class AIQueryService {
         try {
           parsedInput = JSON.parse(toolCall.arguments || '{}')
         } catch {
-          parsedInput = { raw_arguments: toolCall.arguments }
+          // Gemini sometimes concatenates multiple JSON objects like {obj1}{obj2}
+          // Try to extract just the first valid JSON object
+          const argsStr = toolCall.arguments || '{}'
+          try {
+            // Find the end of the first JSON object by counting braces
+            let braceCount = 0
+            let endIndex = 0
+            for (let i = 0; i < argsStr.length; i++) {
+              if (argsStr[i] === '{') braceCount++
+              else if (argsStr[i] === '}') braceCount--
+              if (braceCount === 0 && i > 0) {
+                endIndex = i + 1
+                break
+              }
+            }
+            if (endIndex > 0) {
+              parsedInput = JSON.parse(argsStr.substring(0, endIndex))
+            } else {
+              parsedInput = { raw_arguments: toolCall.arguments }
+            }
+          } catch {
+            parsedInput = { raw_arguments: toolCall.arguments }
+          }
         }
-        
-        content.push({
+
+        const toolUseBlock: any = {
           type: 'tool_use',
           id: toolCall.id,
           name: toolCall.name,
           input: parsedInput
-        })
+        }
+
+        // Preserve Gemini 3's thought_signature for multi-turn tool calling
+        if (toolCall.thoughtSignature) {
+          toolUseBlock.thought_signature = toolCall.thoughtSignature
+        }
+
+        content.push(toolUseBlock)
       }
 
       // If no content, add default
@@ -645,11 +693,11 @@ class AIQueryService {
 
     } catch (error) {
       logError(error)
-      
+
       TelemetryClient.trackEvent('llm_streaming_error', {
         error: error instanceof Error ? error.message : 'Unknown error',
       })
-      
+
       yield { type: 'done', message: this.createErrorResponse(error) }
     }
   }
@@ -660,15 +708,15 @@ class AIQueryService {
     model: string,
   ): Promise<AssistantMessage> {
     const client = this.clientManager.getClient() as Anthropic
-    
+
     // Convert messages to Anthropic format
     const anthropicMessages = this.convertToAnthropicMessages(messages)
-    
+
     // Convert tools to Anthropic format
     const anthropicTools = tools.length > 0 ? this.transformToolsForAnthropic(tools) : undefined
-    
+
     const config = getGlobalConfig()
-    
+
     // Track LLM request
     TelemetryClient.trackEvent('llm_request', {
       provider: 'anthropic',
@@ -687,7 +735,7 @@ class AIQueryService {
 
     // Convert Anthropic response to our internal format
     const content: any[] = []
-    
+
     for (const block of response.content) {
       if (block.type === 'text') {
         content.push({
@@ -718,12 +766,12 @@ class AIQueryService {
 
   private convertToAnthropicMessages(messages: (UserMessage | AssistantMessage)[]): any[] {
     const anthropicMessages: any[] = []
-    
+
     for (const msg of messages) {
       if (msg.type === 'assistant') {
         const content: any[] = []
         const msgContent = msg.message.content
-        
+
         if (typeof msgContent === 'string') {
           content.push({ type: 'text', text: msgContent })
         } else if (Array.isArray(msgContent)) {
@@ -740,7 +788,7 @@ class AIQueryService {
             }
           }
         }
-        
+
         anthropicMessages.push({
           role: 'assistant',
           content,
@@ -748,7 +796,7 @@ class AIQueryService {
       } else if (msg.type === 'user') {
         const content: any[] = []
         const msgContent = msg.message.content
-        
+
         if (typeof msgContent === 'string') {
           content.push({ type: 'text', text: msgContent })
         } else if (Array.isArray(msgContent)) {
@@ -764,23 +812,23 @@ class AIQueryService {
             }
           }
         }
-        
+
         anthropicMessages.push({
           role: 'user',
           content,
         })
       }
     }
-    
+
     return anthropicMessages
   }
 
   private transformToolsForAnthropic(tools: Tool[]): any[] {
     return tools.map(tool => {
-      const safeParameters = tool.inputJSONSchema 
+      const safeParameters = tool.inputJSONSchema
         ? JSON.parse(JSON.stringify(tool.inputJSONSchema))
         : zodToJsonSchema(tool.inputSchema)
-      
+
       return {
         name: tool.name,
         description: tool.description || '',
@@ -791,17 +839,17 @@ class AIQueryService {
 
   private transformToolsForOpenAI(tools: Tool[]): any[] | undefined {
     if (tools.length === 0) return undefined
-    
+
     return tools.map(tool => {
-      const safeParameters = tool.inputJSONSchema 
+      const safeParameters = tool.inputJSONSchema
         ? JSON.parse(JSON.stringify(tool.inputJSONSchema))
         : zodToJsonSchema(tool.inputSchema)
-      
+
       // Ensure description is always a non-empty string
       const description = typeof tool.description === 'string' && tool.description.trim()
-        ? tool.description 
+        ? tool.description
         : `Tool: ${tool.name}`
-      
+
       return {
         type: 'function' as const,
         function: {
@@ -815,10 +863,10 @@ class AIQueryService {
 
   private processQueryResponse(result: any): AssistantMessage {
     let content: any[] = []
-    
+
     if ('choices' in result && result.choices && result.choices[0]) {
       const choice = result.choices[0]
-      
+
       // Extract content - handle null case for function calling
       const messageContent = choice.message?.content
       if (messageContent !== null && messageContent !== undefined && messageContent.trim()) {
@@ -827,11 +875,11 @@ class AIQueryService {
           text: messageContent
         })
       }
-      
+
       // Extract tool calls and convert to tool_use format
       const toolCalls = choice.message?.tool_calls || []
       content.push(...this.processToolCalls(toolCalls))
-      
+
       // If we have no content at all, add a default message
       if (content.length === 0) {
         content.push({
@@ -861,33 +909,59 @@ class AIQueryService {
   private processToolCalls(toolCalls: any[]): any[] {
     const content: any[] = []
     const seenToolCalls = new Set<string>()
-    
+
     for (const toolCall of toolCalls) {
       let parsedInput: any = {}
       try {
         parsedInput = JSON.parse(toolCall.function.arguments || '{}')
       } catch (error) {
-        console.log('Failed to parse tool arguments:', toolCall.function.arguments)
-        parsedInput = { raw_arguments: toolCall.function.arguments }
+        // Gemini sometimes concatenates multiple JSON objects like {obj1}{obj2}
+        // Try to extract just the first valid JSON object
+        const argsStr = toolCall.function.arguments || '{}'
+        try {
+          let braceCount = 0
+          let endIndex = 0
+          for (let i = 0; i < argsStr.length; i++) {
+            if (argsStr[i] === '{') braceCount++
+            else if (argsStr[i] === '}') braceCount--
+            if (braceCount === 0 && i > 0) {
+              endIndex = i + 1
+              break
+            }
+          }
+          if (endIndex > 0) {
+            parsedInput = JSON.parse(argsStr.substring(0, endIndex))
+          } else {
+            parsedInput = { raw_arguments: toolCall.function.arguments }
+          }
+        } catch {
+          parsedInput = { raw_arguments: toolCall.function.arguments }
+        }
       }
-      
+
       // Create a unique key for deduplication
       const toolKey = `${toolCall.function.name}:${JSON.stringify(parsedInput)}`
-      
+
       if (seenToolCalls.has(toolKey)) {
         continue
       }
       seenToolCalls.add(toolKey)
-      
-      const toolUse = {
+
+      const toolUse: any = {
         type: 'tool_use',
         id: toolCall.id,
         name: toolCall.function.name,
         input: parsedInput
       }
+
+      // Preserve Gemini 3's thought_signature for multi-turn tool calling
+      if (toolCall.extra_content?.google?.thought_signature) {
+        toolUse.thought_signature = toolCall.extra_content.google.thought_signature
+      }
+
       content.push(toolUse)
     }
-    
+
     return content
   }
 
