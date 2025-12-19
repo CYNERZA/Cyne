@@ -54,11 +54,26 @@ export function generateSocketName(workspacePath: string): string {
 }
 
 /**
+ * Check if we're on Windows
+ */
+export function isWindows(): boolean {
+  return process.platform === 'win32'
+}
+
+/**
  * Get the full socket path for a workspace
+ * Uses named pipes on Windows, Unix sockets on other platforms
  */
 export function getSocketPath(workspacePath: string): string {
+  const socketName = generateSocketName(workspacePath)
+
+  if (isWindows()) {
+    // Use named pipes on Windows (no admin privileges required)
+    return `\\\\.\\pipe\\cyne-${socketName.replace('.sock', '')}`
+  }
+
   ensureSocketsDir()
-  return join(VSCODE_SOCKETS_DIR, generateSocketName(workspacePath))
+  return join(VSCODE_SOCKETS_DIR, socketName)
 }
 
 /**
@@ -66,11 +81,11 @@ export function getSocketPath(workspacePath: string): string {
  */
 export function readRegistry(): SocketRegistry {
   ensureSocketsDir()
-  
+
   if (!existsSync(REGISTRY_FILE)) {
     return { ...DEFAULT_REGISTRY }
   }
-  
+
   try {
     const content = readFileSync(REGISTRY_FILE, 'utf8')
     const registry = JSON.parse(content) as SocketRegistry
@@ -86,7 +101,7 @@ export function readRegistry(): SocketRegistry {
  */
 export function writeRegistry(registry: SocketRegistry): void {
   ensureSocketsDir()
-  
+
   try {
     writeFileSync(REGISTRY_FILE, JSON.stringify(registry, null, 2), 'utf8')
   } catch (error) {
@@ -104,18 +119,18 @@ export function registerWorkspace(
 ): WorkspaceEntry {
   const normalizedPath = resolve(workspacePath)
   const socketName = generateSocketName(normalizedPath)
-  
+
   const entry: WorkspaceEntry = {
     socket: socketName,
     workspacePath: normalizedPath,
     pid,
     connectedAt: new Date().toISOString()
   }
-  
+
   const registry = readRegistry()
   registry.workspaces[normalizedPath] = entry
   writeRegistry(registry)
-  
+
   return entry
 }
 
@@ -126,7 +141,7 @@ export function registerWorkspace(
 export function unregisterWorkspace(workspacePath: string): void {
   const normalizedPath = resolve(workspacePath)
   const registry = readRegistry()
-  
+
   const entry = registry.workspaces[normalizedPath]
   if (entry) {
     // Clean up socket file if it exists
@@ -138,7 +153,7 @@ export function unregisterWorkspace(workspacePath: string): void {
         // Ignore cleanup errors
       }
     }
-    
+
     delete registry.workspaces[normalizedPath]
     writeRegistry(registry)
   }
@@ -151,16 +166,16 @@ export function unregisterWorkspace(workspacePath: string): void {
 export function findSocketForCwd(cwd: string): WorkspaceEntry | null {
   const normalizedCwd = resolve(cwd)
   const registry = readRegistry()
-  
+
   // First, try exact match
   if (registry.workspaces[normalizedCwd]) {
     return registry.workspaces[normalizedCwd]
   }
-  
+
   // Search for workspaces that contain this directory
   let bestMatch: WorkspaceEntry | null = null
   let bestMatchLength = 0
-  
+
   for (const [workspacePath, entry] of Object.entries(registry.workspaces)) {
     // Check if cwd is inside this workspace
     if (normalizedCwd.startsWith(workspacePath + '/') || normalizedCwd === workspacePath) {
@@ -171,7 +186,7 @@ export function findSocketForCwd(cwd: string): WorkspaceEntry | null {
       }
     }
   }
-  
+
   return bestMatch
 }
 
@@ -198,7 +213,7 @@ export function isWorkspaceRegistered(workspacePath: string): boolean {
 export function updateWorkspacePing(workspacePath: string): void {
   const normalizedPath = resolve(workspacePath)
   const registry = readRegistry()
-  
+
   if (registry.workspaces[normalizedPath]) {
     registry.workspaces[normalizedPath].lastPing = new Date().toISOString()
     writeRegistry(registry)
@@ -211,39 +226,45 @@ export function updateWorkspacePing(workspacePath: string): void {
 export function cleanupStaleEntries(): number {
   const registry = readRegistry()
   let cleaned = 0
-  
+
   for (const [workspacePath, entry] of Object.entries(registry.workspaces)) {
     const socketPath = join(VSCODE_SOCKETS_DIR, entry.socket)
-    
+
     if (!existsSync(socketPath)) {
       delete registry.workspaces[workspacePath]
       cleaned++
     }
   }
-  
+
   if (cleaned > 0) {
     writeRegistry(registry)
   }
-  
+
   return cleaned
 }
 
 /**
  * Clean up orphaned socket files (sockets without registry entries)
+ * Note: On Windows, named pipes are auto-cleaned by the OS
  */
 export function cleanupOrphanedSockets(): number {
+  // Named pipes are automatically cleaned up by Windows
+  if (isWindows()) {
+    return 0
+  }
+
   ensureSocketsDir()
-  
+
   const registry = readRegistry()
   const registeredSockets = new Set(
     Object.values(registry.workspaces).map(e => e.socket)
   )
-  
+
   let cleaned = 0
-  
+
   try {
     const files = readdirSync(VSCODE_SOCKETS_DIR)
-    
+
     for (const file of files) {
       if (file.endsWith('.sock') && !registeredSockets.has(file)) {
         try {
@@ -257,6 +278,6 @@ export function cleanupOrphanedSockets(): number {
   } catch (error) {
     logError(`Failed to cleanup orphaned sockets: ${error}`)
   }
-  
+
   return cleaned
 }

@@ -14,7 +14,7 @@ import {
   ErrorCodes,
   RpcHandler,
 } from './protocol'
-import { getSocketPath, ensureSocketsDir } from './registry'
+import { getSocketPath, ensureSocketsDir, isWindows } from './registry'
 
 export class SocketServer {
   private server: net.Server | null = null
@@ -41,10 +41,13 @@ export class SocketServer {
    * Start the socket server
    */
   async start(): Promise<void> {
-    ensureSocketsDir()
-    
-    // Remove stale socket file if exists
-    if (fs.existsSync(this.socketPath)) {
+    // Sockets dir only needed on Unix (Windows uses named pipes)
+    if (!isWindows()) {
+      ensureSocketsDir()
+    }
+
+    // Remove stale socket file if exists (not applicable for Windows named pipes)
+    if (!isWindows() && fs.existsSync(this.socketPath)) {
       try {
         fs.unlinkSync(this.socketPath)
       } catch {
@@ -63,11 +66,13 @@ export class SocketServer {
       })
 
       this.server.listen(this.socketPath, () => {
-        // Set socket permissions to be accessible by the user
-        try {
-          fs.chmodSync(this.socketPath, 0o600)
-        } catch {
-          // Ignore permission errors
+        // Set socket permissions to be accessible by the user (Unix only)
+        if (!isWindows()) {
+          try {
+            fs.chmodSync(this.socketPath, 0o600)
+          } catch {
+            // Ignore permission errors
+          }
         }
         this.log(`Socket server listening on ${this.socketPath}`)
         resolve()
@@ -83,16 +88,16 @@ export class SocketServer {
       if (this.server) {
         this.server.close(() => {
           this.log('Socket server stopped')
-          
-          // Clean up socket file
-          if (fs.existsSync(this.socketPath)) {
+
+          // Clean up socket file (Unix only)
+          if (!isWindows() && fs.existsSync(this.socketPath)) {
             try {
               fs.unlinkSync(this.socketPath)
             } catch {
               // Ignore
             }
           }
-          
+
           resolve()
         })
       } else {

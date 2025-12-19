@@ -35,6 +35,13 @@ export function ensureSocketsDir(): void {
 }
 
 /**
+ * Check if we're on Windows
+ */
+export function isWindows(): boolean {
+  return process.platform === 'win32'
+}
+
+/**
  * Generate socket filename for a workspace
  */
 export function generateSocketName(workspacePath: string): string {
@@ -44,10 +51,18 @@ export function generateSocketName(workspacePath: string): string {
 
 /**
  * Get full socket path
+ * Uses named pipes on Windows, Unix sockets on other platforms
  */
 export function getSocketPath(workspacePath: string): string {
+  const socketName = generateSocketName(workspacePath)
+
+  if (isWindows()) {
+    // Use named pipes on Windows (no admin privileges required)
+    return `\\\\.\\pipe\\cyne-${socketName.replace('.sock', '')}`
+  }
+
   ensureSocketsDir()
-  return path.join(SOCKETS_DIR, generateSocketName(workspacePath))
+  return path.join(SOCKETS_DIR, socketName)
 }
 
 /**
@@ -55,11 +70,11 @@ export function getSocketPath(workspacePath: string): string {
  */
 function readRegistry(): SocketRegistry {
   ensureSocketsDir()
-  
+
   if (!fs.existsSync(REGISTRY_FILE)) {
     return { version: 1, workspaces: {} }
   }
-  
+
   try {
     const content = fs.readFileSync(REGISTRY_FILE, 'utf8')
     return JSON.parse(content) as SocketRegistry
@@ -82,18 +97,18 @@ function writeRegistry(registry: SocketRegistry): void {
 export function registerWorkspace(workspacePath: string): WorkspaceEntry {
   const normalizedPath = path.resolve(workspacePath)
   const socketName = generateSocketName(normalizedPath)
-  
+
   const entry: WorkspaceEntry = {
     socket: socketName,
     workspacePath: normalizedPath,
     pid: process.pid,
     connectedAt: new Date().toISOString(),
   }
-  
+
   const registry = readRegistry()
   registry.workspaces[normalizedPath] = entry
   writeRegistry(registry)
-  
+
   return entry
 }
 
@@ -103,7 +118,7 @@ export function registerWorkspace(workspacePath: string): WorkspaceEntry {
 export function unregisterWorkspace(workspacePath: string): void {
   const normalizedPath = path.resolve(workspacePath)
   const registry = readRegistry()
-  
+
   const entry = registry.workspaces[normalizedPath]
   if (entry) {
     // Clean up socket file
@@ -115,7 +130,7 @@ export function unregisterWorkspace(workspacePath: string): void {
         // Ignore
       }
     }
-    
+
     delete registry.workspaces[normalizedPath]
     writeRegistry(registry)
   }
@@ -127,7 +142,7 @@ export function unregisterWorkspace(workspacePath: string): void {
 export function updatePing(workspacePath: string): void {
   const normalizedPath = path.resolve(workspacePath)
   const registry = readRegistry()
-  
+
   if (registry.workspaces[normalizedPath]) {
     registry.workspaces[normalizedPath].lastPing = new Date().toISOString()
     writeRegistry(registry)
